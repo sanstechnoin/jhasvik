@@ -9,6 +9,89 @@ const firebaseConfig = {
 };
 // --- END OF FIREBASE CONFIG ---
 
+// --- NEW: MASTER MENU LIST ---
+const MENU_ITEMS = [
+    { name: "Muringayila Charu", price: 6.90 },
+    { name: "Kayi Halu Rasam", price: 5.90 },
+    { name: "Chettinadu Nandu Rasam", price: 7.90 },
+    { name: "Hyderabadi Mutton Bone soup", price: 7.90 },
+    { name: "Carrot 65", price: 7.90 },
+    { name: "Kallukadai Koon Ularthiyathu", price: 9.90 },
+    { name: "Kovai Paal Katti Monica", price: 6.90 },
+    { name: "Meduvada (2 pieces)", price: 5.50 },
+    { name: "Sambar Vada (2 pieces)", price: 7.90 },
+    { name: "Rasam Vada (2 pieces)", price: 7.90 },
+    { name: "Thayir Vada (2 pieces)", price: 6.90 },
+    { name: "Ghee Podi Mini Idli", price: 10.90 },
+    { name: "Mini Sambar Idli", price: 8.90 },
+    { name: "Guntur Kodi Roast", price: 11.90 },
+    { name: "Karandi Omelette", price: 6.90 },
+    { name: "Kozhi Milagu Pirattal Parotta Tacos", price: 13.90 },
+    { name: "Chemmeen Podi ittu Varuthathu", price: 14.90 },
+    { name: "Vintage Chicken 65", price: 9.90 },
+    { name: "Rayalaseema Veyinchina Mamsam", price: 16.90 },
+    { name: "Mutton Varattiyathu", price: 16.90 },
+    { name: "Malabar Meen Polichathu", price: 20.90 },
+    { name: "Koonthal Porichathu", price: 18.90 },
+    { name: "Hasiru Masala Fish fry", price: 20.90 },
+    { name: "Sigadigalu Roast", price: 16.90 },
+    { name: "Muttai Chutney Kebab", price: 9.90 },
+    { name: "Kari Pazha Kuzhambu", price: 18.90 },
+    { name: "Avakkaya Pappu annam", price: 15.90 },
+    { name: "Madurai Kaai Salna", price: 18.90 },
+    { name: "Gutti Vankaya kura", price: 16.90 },
+    { name: "Batata Pathinja Gassi", price: 18.90 },
+    { name: "Pollachi Mutton Kulambu", price: 20.90 },
+    { name: "Gongura Oorugai Mamasam", price: 20.90 },
+    { name: "Meen Manga Thalicha Curry", price: 20.90 },
+    { name: "Kori Gassi", price: 18.90 },
+    { name: "Tamoto Guddu Pulusu", price: 14.90 },
+    { name: "Madurai Chicken Salna", price: 16.90 },
+    { name: "Naanjil Naadan Karipazha Biriyani", price: 14.90 },
+    { name: "Kongunadu Mutton Biriyani", price: 16.90 },
+    { name: "Muslim Style Chicken Biriyani", price: 13.90 },
+    { name: "Chicken Biriyani COMBO", price: 21.90 },
+    { name: "Mutton Biriyani COMBO", price: 24.90 },
+    { name: "Idiyappam (4 pieces)", price: 4.90 },
+    { name: "Madurai Kari Dosa (2 piece)", price: 16.90 },
+    { name: "Bun Parotta (2 piece)", price: 7.90 },
+    { name: "Malabar Wheat Parotta (2 piece)", price: 6.90 },
+    { name: "Chicken Kothu Idiyappam", price: 13.90 },
+    { name: "Veg Kothu Idiyappam", price: 12.90 },
+    { name: "Veg Kothu Parotta", price: 12.90 },
+    { name: "Egg Kothu Parotta", price: 13.90 },
+    { name: "Chicken Kothu Parotta", price: 14.90 },
+    { name: "Plain Idli (2 pieces)", price: 5.90 },
+    { name: "Neer Dosa (4 pieces)", price: 7.90 },
+    { name: "Plain Dosa", price: 9.90 },
+    { name: "Ghee Roast", price: 11.90 },
+    { name: "Masala Dosa", price: 11.90 },
+    { name: "Ghee Podi Onion Dosa", price: 12.90 },
+    { name: "Onion Rava Dosa", price: 11.90 },
+    { name: "Open Butter Masala Dosa", price: 12.90 },
+    { name: "Nellore Ghee Karam Dosa (1 piece)", price: 12.90 },
+    { name: "Onion Uthappam (1 piece)", price: 12.90 },
+    { name: "Plain Uthappam (1 piece)", price: 11.90 },
+    { name: "Onion Ghee Podi Uthappam (1 piece)", price: 12.90 },
+    { name: "Filter Coffee Custard", price: 8.90 },
+    { name: "Badam Halwa", price: 8.90 },
+    { name: "Karuppu Kavuni Arisi Halwa", price: 8.90 },
+    { name: "Hydrebadi Double ka Meetha", price: 5.90 },
+    { name: "Pazham Pori with Paalada Pradhaman", price: 10.90 },
+    { name: "Tea Masala", price: 3.50 },
+    { name: "Madras Filter Coffee", price: 4.50 },
+    { name: "Sulaimani", price: 4.00 },
+    { name: "Tea", price: 3.00 },
+    { name: "Sukku Malli Kaapi", price: 4.50 },
+    { name: "Vasantha Neer", price: 7.90 },
+    { name: "Paanakam", price: 6.90 },
+    { name: "Nannari Sharbat", price: 4.90 },
+    { name: "Jhasvik Special Rose Milk", price: 5.90 },
+    { name: "Keralayam", price: 7.90 },
+    { name: "Sambharam", price: 4.90 }
+];
+// --- END MASTER MENU LIST ---
+
 // --- 2. Initialize Firebase ---
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -28,6 +111,13 @@ const billItemListEl = document.getElementById('bill-item-list');
 const billTotalAmountEl = document.getElementById('bill-total-amount');
 const addItemForm = document.getElementById('add-item-form');
 const closeBillBtn = document.getElementById('close-bill-btn');
+
+// --- NEW: Get form inputs and datalist ---
+const itemNameInput = document.getElementById('item-name');
+const itemQtyInput = document.getElementById('item-qty');
+const itemPriceInput = document.getElementById('item-price');
+const menuDatalist = document.getElementById('menu-items-list');
+// --- END NEW ---
 
 let allCookedOrders = []; // Full list of 'cooked' orders
 let currentSelectedTable = null; // Which table bill is being viewed
@@ -52,6 +142,8 @@ passwordInput.addEventListener('keyup', (e) => e.key === 'Enter' && loginButton.
  * Initializes the main Firestore listener.
  */
 function initializeBilling() {
+    populateDatalist(); // <-- NEW: Fill the dropdown
+
     db.collection("orders")
       .where("status", "==", "cooked") // <-- LISTENS ONLY FOR 'cooked' ORDERS
       .onSnapshot(
@@ -78,14 +170,17 @@ function initializeBilling() {
     
     // --- Add Listeners for Form and Close Button ---
     
+    // --- NEW: Add item search listener ---
+    itemNameInput.addEventListener('input', handleItemSearch);
+
     // Add Manual Item Form
     addItemForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!currentSelectedTable) return;
 
-        const name = document.getElementById('item-name').value;
-        const qty = parseInt(document.getElementById('item-qty').value);
-        const price = parseFloat(document.getElementById('item-price').value);
+        const name = itemNameInput.value;
+        const qty = parseInt(itemQtyInput.value);
+        const price = parseFloat(itemPriceInput.value);
         
         if (!name || isNaN(qty) || isNaN(price) || qty <= 0 || price < 0) {
             alert("Please enter valid item details.");
@@ -257,4 +352,34 @@ function addDeleteButtonListeners() {
             }
         });
     });
+}
+
+// --- NEW HELPER FUNCTIONS ---
+
+/**
+ * Populates the <datalist> with menu items
+ */
+function populateDatalist() {
+    menuDatalist.innerHTML = ""; // Clear any existing
+    MENU_ITEMS.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.name;
+        menuDatalist.appendChild(option);
+    });
+}
+
+/**
+ * Handles the input event on the item name field.
+ * Autofills price if a match is found.
+ */
+function handleItemSearch() {
+    const query = itemNameInput.value;
+    // Find a case-insensitive match
+    const match = MENU_ITEMS.find(item => item.name.toLowerCase() === query.toLowerCase());
+    
+    if (match) {
+        itemPriceInput.value = match.price.toFixed(2);
+    } else {
+        itemPriceInput.value = ''; // Clear price if no match
+    }
 }
