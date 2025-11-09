@@ -48,7 +48,7 @@
                     <h3>Add Manual Item</h3>
                     <div class="form-row">
                         <label for="item-name">Item Name</label>
-                        <input type="text" id="item-name" required>
+                        <input type="text" id="item-name" required list="menu-items-list">
                     </div>
                     <div class="form-row form-row-small">
                         <label for="item-qty">Qty</label>
@@ -68,7 +68,8 @@
             </div>
         </div>
     </main>
-
+    <datalist id="menu-items-list">
+    </datalist>    
     <!-- Simple sticky footer -->
     <footer class="site-credit-footer">
         <div class="footer-line-one">
