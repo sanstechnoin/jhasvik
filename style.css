@@ -892,15 +892,17 @@ address {
     letter-spacing: 0.5px;
 }
 
-/* ---
-   NEW KITCHEN DISPLAY SYSTEM (KDS) STYLES
---- */
+/* ===============================================
+   KITCHEN DISPLAY SYSTEM (KDS) STYLES
+   (CLEANED AND CONSOLIDATED)
+=============================================== 
+*/
 
 .kitchen-body {
     background-color: var(--bg-dark);
 }
 
-/* Around line 550 in your existing CSS */
+/* --- KDS Header (CONSOLIDATED) --- */
 .kitchen-header {
     background-color: var(--card-bg);
     color: var(--gold);
@@ -909,21 +911,33 @@ address {
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid var(--gold);
-
-    /* CRITICAL FIX FOR STICKY HEADER */
     position: sticky; 
     top: 0;
     z-index: 100;
 }
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-logo img {
+    height: 40px; 
+    width: auto;
+}
+
+/* CONSOLIDATED H1 RULE */
 .kitchen-header h1 {
     margin: 0;
-    font-size: 1.5em;
+    font-size: 1.2em; /* Was 1.5em, changed to 1.2em */
 }
 
 #connection-status {
     font-weight: bold;
     padding: 5px 10px;
     border-radius: 5px;
+    flex-shrink: 0; /* Prevents button from shrinking */
 }
 .status-disconnected {
     background-color: #8B0000; /* Dark Red */
@@ -934,8 +948,16 @@ address {
     color: white;
 }
 
+/* --- KDS Content & Grid --- */
 .kitchen-main {
     padding: 10px;
+}
+
+#kds-content-wrapper {
+    width: 100%;
+    max-width: 1200px; /* Max width for the grid */
+    margin: 0 auto; /* Centers the KDS content horizontally */
+    margin-top: 0;
 }
 
 .table-grid {
@@ -954,44 +976,101 @@ address {
     flex-direction: column;
 }
 
-.table-box h2 {
-    color: var(--gold);
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     border-bottom: 1px solid var(--gold);
     padding: 10px 15px;
-    margin: 0;
-    font-size: 1.2em;
 }
 
+.table-header h2 {
+    color: var(--gold);
+    margin: 0;
+    font-size: 1.2em;
+    border-bottom: none; /* Removed old border */
+    padding: 0;
+}
+
+.order-time {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--text-subtle);
+}
+
+/* CONSOLIDATED ORDER LIST (REMOVED OLD CONFLICTS) */
 .table-box .order-list {
     list-style: none;
-    padding: 15px;
+    padding: 0;
     margin: 0;
     flex-grow: 1; /* Makes box fill height */
-    
-    /* This is the scroller you wanted */
-    max-height: 250px;
+    max-height: 300px;
     overflow-y: auto;
 }
 
-.table-box .order-list li {
-    padding: 0;
-    border-bottom: none;
-    font-size: 0.95em;
-    line-height: 1.6;
-}
-
 /* This is the "Waiting..." text */
-.table-box .order-list li:first-child {
+.order-list-empty {
     color: var(--text-subtle);
     font-style: italic;
+    padding: 15px;
+    display: list-item; /* Will be hidden by JS if items exist */
 }
 
-/* New Order Popup Styles */
-/* --- NEW FIX: KDS Login Box Styling and Click Fix --- */
+/* Styles for Appended Order Groups */
+.order-group {
+    padding: 10px 15px;
+    border-bottom: 1px dashed var(--border-color);
+}
+.order-group:last-child {
+    border-bottom: none;
+}
+.order-group h4 {
+    margin: 0 0 5px 0;
+    color: var(--gold);
+    font-size: 0.9em;
+    font-weight: bold;
+}
+.order-group ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.order-group li {
+    padding: 2px 0 2px 10px;
+    font-size: 0.95em;
+    line-height: 1.4;
+    /* This overrides the base 'li' styles */
+    border-bottom: none; 
+}
 
-/* Force the KDS content wrapper to be full screen for login */
+
+/* "Clear Order" Button */
+.clear-table-btn {
+    background-color: #8B0000; /* Dark Red */
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom-left-radius: 8px; /* Match box corner */
+    border-bottom-right-radius: 8px; /* Match box corner */
+    transition: background-color 0.2s;
+    margin-top: auto; /* Pushes button to the bottom */
+}
+.clear-table-btn:hover {
+    background-color: #a10000; /* Brighter Red */
+}
+.clear-table-btn:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+/* --- KDS Popups (Login & New Order) --- */
+
+/* Base style for ALL KDS overlays (Login AND New Order) */
 .kitchen-popup-overlay {
-    position: fixed; /* CRITICAL FIX: Position fixed to cover the screen */
+    position: fixed; 
     top: 0;
     left: 0;
     width: 100%;
@@ -1008,6 +1087,7 @@ address {
     display: none;
 }
 
+/* Style for the inner box (used by Login AND New Order) */
 .kitchen-popup-box {
     background: var(--card-bg); /* Dark blue background */
     color: var(--text-main);
@@ -1018,8 +1098,6 @@ address {
     max-width: 400px;
     width: 100%;
     z-index: 5001; /* Must be higher than overlay */
-    
-    /* Ensure no flex-item margins interfere */
     margin: 0; 
 }
 
@@ -1030,32 +1108,38 @@ address {
     margin-bottom: 5px;
 }
 
+/* --- KDS Login Specifics (FIXED OVERLAP) --- */
 #kitchen-password {
     background-color: var(--bg-dark); /* Dark input field */
     color: var(--text-main);
     border: 1px solid var(--border-color);
-    padding: 10px;
-    width: 90%; /* Make input fit nicely */
-    box-sizing: border-box;
+    padding: 12px;
+    width: 100%; /* Changed from 90% to 100% */
+    box-sizing: border-box; /* Added for correct width */
     border-radius: 4px;
+    margin-top: 15px;  /* Added margin */
+    margin-bottom: 10px; /* Added margin */
 }
 
 #login-button {
     background-color: var(--gold); /* Gold button */
     color: #000;
     border: none;
-    padding: 10px 30px;
+    padding: 12px 30px;
     font-weight: bold;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.2s;
+    width: 100%; /* Added width 100% */
+    box-sizing: border-box; /* Added for correct width */
+    margin-top: 15px; /* Added margin */
 }
 #login-button:hover {
     background-color: #b8860b;
 }
 
-/* --- END FIX --- */
 
+/* --- New Order Popup Specifics (FIXED INVISIBLE TEXT) --- */
 #popup-order-details {
     text-align: left;
     background-color: #f4f4f4;
@@ -1064,6 +1148,7 @@ address {
     margin: 15px 0;
     max-height: 300px;
     overflow-y: auto;
+    color: var(--bg-dark); /* <-- THIS IS THE FIX for invisible text */
 }
 
 #popup-order-details h4 {
@@ -1071,6 +1156,7 @@ address {
     font-size: 1.4em;
     border-bottom: 1px solid #ccc;
     padding-bottom: 5px;
+    color: var(--bg-dark); /* Ensure header is also dark */
 }
 
 #popup-order-details ul {
@@ -1079,6 +1165,11 @@ address {
     margin: 0;
     font-size: 1.1em;
     line-height: 1.7;
+}
+
+#popup-order-details li {
+    padding: 0;
+    border-bottom: none;
 }
 
 #accept-order-btn {
@@ -1097,7 +1188,18 @@ address {
     background-color: #008000; /* Brighter Green */
 }
 
-/* Mobile responsive grid */
+/* Animation for flashing new orders */
+@keyframes newOrderFlash {
+    0% { background-color: var(--card-bg); }
+    50% { background-color: var(--gold); }
+    100% { background-color: var(--card-bg); }
+}
+
+.table-box.new-order-flash {
+    animation: newOrderFlash 1s ease-in-out;
+}
+
+/* --- KDS Responsive Grid --- */
 @media (max-width: 1200px) {
     .table-grid {
         grid-template-columns: repeat(3, 1fr); /* 3 columns on tablet */
@@ -1114,121 +1216,17 @@ address {
     .table-grid {
         grid-template-columns: 1fr; /* 1 column on mobile */
     }
+    
+    /* Responsive fixes for KDS header on small mobile */
+    .kitchen-header h1 {
+        font-size: 1.0em; /* Smaller font on mobile */
+        white-space: nowrap;
+    }
+    .header-logo img {
+        height: 30px; /* Smaller logo on mobile */
+    }
+    .header-logo {
+        gap: 8px;
+        min-width: 0; /* Allow logo area to shrink */
+    }
 }
-/* Add this to your style.css */
-@keyframes newOrderFlash {
-    0% { background-color: var(--card-bg); }
-    50% { background-color: var(--gold); }
-    100% { background-color: var(--card-bg); }
-}
-
-.table-box.new-order-flash {
-    animation: newOrderFlash 1s ease-in-out;
-}
-
-/* --- Add this to your KDS STYLES block in style.css --- */
-
-.kitchen-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.header-logo {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.header-logo img {
-    height: 40px; /* Or whatever size you like */
-    width: auto;
-}
-
-.kitchen-header h1 {
-    font-size: 1.2em; /* Make room for logo */
-}
-
-/* New Table Box Header */
-.table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--gold);
-    padding: 10px 15px;
-}
-
-.table-header h2 {
-    color: var(--gold);
-    margin: 0;
-    font-size: 1.2em;
-    border-bottom: none; /* Remove old border */
-    padding: 0;
-}
-
-.order-time {
-    font-size: 0.9em;
-    font-weight: bold;
-    color: var(--text-subtle);
-}
-
-/* "Clear Order" Button */
-.clear-table-btn {
-    background-color: #8B0000; /* Dark Red */
-    color: white;
-    border: none;
-    padding: 10px;
-    font-size: 0.9em;
-    font-weight: bold;
-    cursor: pointer;
-    border-bottom-left-radius: 8px; /* Match box corner */
-    border-bottom-right-radius: 8px; /* Match box corner */
-    transition: background-color 0.2s;
-}
-.clear-table-btn:hover {
-    background-color: #a10000; /* Brighter Red */
-}
-
-/* This is the "Waiting..." text */
-.order-list-empty {
-    color: var(--text-subtle);
-    font-style: italic;
-    padding: 15px;
-}
-
-/* This styles the list *only* when it has items */
-.table-box .order-list {
-    padding: 0;
-}
-.table-box .order-list li {
-    padding: 5px 15px; /* Add padding to items */
-    border-bottom: 1px dashed var(--border-color); /* Separate items */
-}
-.table-box .order-list li:last-child {
-    border-bottom: none;
-}
-
-/* --- CRITICAL FIX FOR KDS GRID CENTERING AND VISIBILITY --- */
-
-/* 1. KDS Grid Centering */
-#kds-content-wrapper {
-    width: 100%;
-    max-width: 1200px; /* Max width for the grid */
-    margin: 0 auto; /* Centers the KDS content horizontally */
-    margin-top: 0;
-}
-
-/* 2. Login Screen Centering (Uses fixed positioning so it doesn't rely on body flex) */
-#kitchen-login-overlay {
-    position: fixed; 
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center; /* Centers horizontally */
-    align-items: center;   /* Centers vertically */
-    z-index: 5000; 
-    background: rgba(0, 0, 0, 0.9);
-}
-
