@@ -908,7 +908,7 @@ address {
     color: var(--gold);
     padding: 10px 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* <-- THIS IS THE FIX (was space-between) */
     align-items: center;
     border-bottom: 2px solid var(--gold);
     position: sticky; 
@@ -1013,6 +1013,7 @@ address {
     padding: 15px;
     display: block; /* Show by default, JS will hide it */
     flex-grow: 1; /* This is new, helps fill space */
+    list-style-type: none; /* <-- THIS IS THE FIX */
 }
 
 /* Styles for Appended Order Groups */
@@ -1040,7 +1041,8 @@ address {
     font-size: 0.95em;
     line-height: 1.4;
     border-bottom: none; 
-    display: list-item; /* Ensure it behaves as a list item */
+    display: block; /* <-- THIS IS THE FIX (was list-item) */
+    list-style-type: none; /* <-- THIS IS THE FIX */
 }
 
 
