@@ -228,7 +228,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             total += item.price * item.quantity;
             itemsOnly.push({
                 quantity: item.quantity,
-                name: item.name
+                name: item.name,
+                price: item.price
             });
         });
         return { summaryText, total, itemsOnly };
