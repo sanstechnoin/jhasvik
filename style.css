@@ -1461,4 +1461,199 @@ address {
     }
 }
 
+/* ===============================================
+   NEW SALES RECORDS PAGE STYLES
+=============================================== 
+*/
+
+.records-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-dark);
+}
+
+.records-main {
+    flex-grow: 1;
+    max-width: none; /* Override default 'main' */
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.records-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    align-items: flex-end;
+}
+/* Add this new rule to your style.css */
+
+#filter-btn {
+    margin-left: auto; /* Pushes this button and the print button to the right */
+}
+
+.date-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.date-filter label {
+    font-size: 0.9em;
+    color: var(--text-subtle);
+}
+.date-filter input {
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-family: inherit;
+}
+.records-controls button {
+    margin-left: 10px;
+    padding: 10px 15px;
+    height: 42px; /* Align with inputs */
+}
+
+/* Summary Boxes */
+.records-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.summary-box {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border-left: 4px solid var(--gold);
+}
+.summary-title {
+    font-size: 1.1em;
+    color: var(--text-subtle);
+    margin-bottom: 5px;
+}
+.summary-value {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+/* Results List */
+.records-results {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+}
+.record-item {
+    border-bottom: 1px solid var(--border-color);
+}
+.record-item:last-child {
+    border-bottom: none;
+}
+.record-summary {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 15px;
+    padding: 15px 10px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.2s;
+}
+.record-summary:hover {
+    background-color: #0d163d;
+}
+.record-date {
+    font-weight: bold;
+}
+.record-table {
+    color: var(--text-subtle);
+}
+.record-total {
+    font-weight: bold;
+    color: var(--gold);
+    text-align: right;
+}
+.record-item-details {
+    padding: 15px 20px 20px 40px;
+    background-color: #0d163d;
+    border-top: 1px solid var(--border-color);
+}
+.record-item-details ul {
+    list-style: disc;
+    padding-left: 20px;
+}
+.record-item-details li {
+    padding: 5px 0;
+    border: none;
+    font-size: 1em;
+}
+
+/* --- PRINTING STYLES --- */
+@media print {
+    /* Hide everything except the records list */
+    body.records-body {
+        background-color: #fff;
+        color: #000;
+    }
+    .kitchen-header, .records-controls, #records-login-overlay, #footer-bar {
+        display: none !important;
+    }
+    .records-main {
+        padding: 0;
+        max-width: 100%;
+    }
+    .records-summary {
+        border-bottom: 2px solid #666;
+        padding-bottom: 15px;
+    }
+    .summary-box {
+        background-color: #eee;
+        color: #000;
+        border: 1px solid #ccc;
+        border-left: 4px solid #333;
+    }
+    .summary-title, .summary-value {
+        color: #000;
+    }
+    .records-results {
+        background-color: #fff;
+        padding: 0;
+    }
+    /* Force all details to be open */
+    .record-item {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        page-break-inside: avoid;
+    }
+    .record-item details[open] {
+        display: block;
+    }
+    .record-item details {
+        display: block;
+    }
+    .record-summary {
+        background-color: #f0f0f0;
+    }
+    .record-total {
+        color: #000;
+    }
+    .record-table {
+        color: #333;
+    }
+    .record-item-details {
+        background-color: #fff;
+        border-top: 1px solid #ccc;
+    }
+    .record-item-details li {
+        color: #000;
+    }
+}
 
