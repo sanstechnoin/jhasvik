@@ -950,6 +950,7 @@ address {
 .kitchen-main {
     padding: 10px;
     flex-grow: 1; /* <-- ADDED: Pushes footer down */
+    max-width: none;
 }
 
 #kds-content-wrapper {
@@ -1235,3 +1236,4 @@ address {
         min-width: 0; /* Allow logo area to shrink */
     }
 }
+
