@@ -14,7 +14,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // --- 3. Global State and DOM Elements ---
-const connectionStatusEl = document.getElementById('connection-status');
+const connectionIconEl = document.getElementById('connection-icon'); // <-- CHANGED
 const newOrderPopup = document.getElementById('new-order-popup-overlay');
 const popupOrderDetails = document.getElementById('popup-order-details');
 const acceptOrderBtn = document.getElementById('accept-order-btn');
@@ -65,8 +65,7 @@ function initializeKDS() {
       .onSnapshot(
         (snapshot) => {
             // --- Connection Status ---
-            connectionStatusEl.textContent = "Connected";
-            connectionStatusEl.className = "status-connected";
+            connectionIconEl.textContent = '✅'; // <-- CHANGED
             
             // --- Process Changes ---
             snapshot.docChanges().forEach((change) => {
@@ -108,8 +107,6 @@ function initializeKDS() {
                 if (change.type === "modified") {
                     // This handles the "status: seen" update
                     console.log("Order modified (seen):", orderData.id);
-                    // We could add a visual indicator here, but for now
-                    // we just update the internal state.
                     if (tableOrders[tableId]) {
                        const index = tableOrders[tableId].findIndex(o => o.id === orderData.id);
                        if (index > -1) {
@@ -122,8 +119,7 @@ function initializeKDS() {
         (error) => {
             // --- Error Handling ---
             console.error("Error connecting to Firestore: ", error);
-            connectionStatusEl.textContent = "Connection Error";
-            connectionStatusEl.className = "status-disconnected";
+            connectionIconEl.textContent = '❌'; // <-- CHANGED
         }
     );
 
@@ -174,16 +170,29 @@ function updateTableBox(tableId) {
     const tableBox = document.getElementById(`table-${tableId}`);
     if (!tableBox) return; // Safety check
     
+    // --- THIS IS THE FIX ---
+    // Get the list AND the empty message elements
     const orderList = tableBox.querySelector('.order-list');
     const emptyMsg = tableBox.querySelector('.order-list-empty');
+    // --- END OF FIX ---
+    
     const orders = tableOrders[tableId];
     
-    orderList.innerHTML = ""; // Clear current list
+    // Clear only the list, not the empty message
+    orderList.innerHTML = ""; 
     
     if (!orders || orders.length === 0) {
-        emptyMsg.style.display = 'list-item'; // Show "Waiting..."
+        // --- THIS IS THE FIX ---
+        // Hide the list, show the empty message
+        orderList.style.display = 'none';
+        emptyMsg.style.display = 'block';
+        // --- END OF FIX ---
     } else {
-        emptyMsg.style.display = 'none'; // Hide "Waiting..."
+        // --- THIS IS THE FIX ---
+        // Show the list, hide the empty message
+        orderList.style.display = 'block';
+        emptyMsg.style.display = 'none';
+        // --- END OF FIX ---
         
         // Sort orders by time, oldest first
         orders.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
@@ -196,6 +205,7 @@ function updateTableBox(tableId) {
             
             let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
             
+            // This part creates the order group and adds it to the list
             const orderGroupHtml = `
                 <div class="order-group" id="${order.id}">
                     <h4>Order @ ${orderTimestamp}</h4>
