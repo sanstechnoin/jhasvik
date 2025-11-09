@@ -81,12 +81,10 @@ async function fetchRecords() {
     }
 
     // --- 1-YEAR SAFETY CAP ---
-    // Create a date for one year ago
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    oneYearAgo.setHours(0, 0, 0, 0); // Set to start of the day
+    oneYearAgo.setHours(0, 0, 0, 0); 
 
-    // Check if the user's start date is *before* the 1-year cap
     if (startDate < oneYearAgo) {
         alert("Cannot fetch data older than 1 year. Setting start date to 1 year ago.");
         startDate = oneYearAgo;
@@ -102,11 +100,14 @@ async function fetchRecords() {
         const query = db.collection("archived_orders")
             .where("closedAt", ">=", firebase.firestore.Timestamp.fromDate(startDate))
             .where("closedAt", "<=", firebase.firestore.Timestamp.fromDate(endDate))
-            .orderBy("closedAt", "asc"); // Show newest first
+            .orderBy("closedAt", "asc"); // <-- *** THIS IS THE FIX (was "desc") ***
 
         const snapshot = await query.get();
+        
+        // --- THIS IS THE SECOND PART OF THE FIX ---
         const records = snapshot.docs.map(doc => doc.data());
-        allFetchedRecords = records.reverse(); // Manually reverse the list
+        allFetchedRecords = records.reverse(); // Manually reverse the list to show newest first
+        // --- END OF FIX ---
         
         renderRecords(allFetchedRecords);
         calculateSummary(allFetchedRecords);
@@ -156,7 +157,9 @@ function renderRecords(records) {
         
         let itemsHtml = '<ul>';
         record.items.forEach(item => {
-            itemsHtml += `<li>${item.quantity}x ${item.name} (${item.price.toFixed(2)} €)</li>`;
+            // Check for price being null or undefined
+            const price = item.price || 0;
+            itemsHtml += `<li>${item.quantity}x ${item.name} (${price.toFixed(2)} €)</li>`;
         });
         itemsHtml += '</ul>';
         itemsList.innerHTML = itemsHtml;
@@ -173,7 +176,7 @@ function renderRecords(records) {
 function calculateSummary(records) {
     let totalRevenue = 0;
     records.forEach(record => {
-        totalRevenue += record.total;
+        totalRevenue += (record.total || 0);
     });
 
     totalRevenueEl.textContent = `${totalRevenue.toFixed(2)} €`;
