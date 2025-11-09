@@ -225,25 +225,57 @@ function initializeBilling() {
         
         if (ordersToClose.length === 0) return;
         
-        // Use a batch to delete them all
-        const batch = db.batch();
-        ordersToClose.forEach(order => {
-            batch.delete(db.collection("orders").doc(order.id));
-        });
+        // --- NEW ARCHIVE LOGIC ---
         
+        // 1. Compile all items into a final list
+        let finalBillItems = [];
+        let finalBillTotal = 0;
+
+        ordersToClose.forEach(order => {
+            const items = order.items || [{ name: order.name, quantity: order.quantity, price: order.price }];
+            items.forEach(item => {
+                finalBillItems.push({
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price
+                });
+                finalBillTotal += (item.price || 0) * (item.quantity || 1);
+            });
+        });
+
+        // 2. Create the new archive document
+        const archiveDoc = {
+            table: currentSelectedTable,
+            items: finalBillItems,
+            total: finalBillTotal,
+            closedAt: new Date() // The time the bill was closed
+        };
+
         try {
+            // 3. Save the new archive document
+            // We give it a unique ID based on the timestamp
+            const archiveId = `archive-${new Date().getTime()}`;
+            await db.collection("archived_orders").doc(archiveId).set(archiveDoc);
+
+            // 4. (Only after saving) Delete all the old 'cooked' orders
+            const batch = db.batch();
+            ordersToClose.forEach(order => {
+                batch.delete(db.collection("orders").doc(order.id));
+            });
             await batch.commit();
-            console.log(`Bill for Table ${currentSelectedTable} has been closed.`);
+
+            console.log(`Bill for Table ${currentSelectedTable} has been archived and closed.`);
             billViewEl.classList.add('hidden'); // Hide the bill view
             currentSelectedTable = null;
             // The onSnapshot listener will automatically update the table list
+        
         } catch (err) {
-            console.error("Error closing bill: ", err);
+            console.error("Error archiving bill: ", err);
+            alert("Error closing bill. Check the console.");
         }
+        // --- END NEW ARCHIVE LOGIC ---
     });
-
 } // End initializeBilling()
-
 
 /**
  * Populates the left column with buttons for each table that has a bill.
