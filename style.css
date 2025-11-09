@@ -899,6 +899,9 @@ address {
 */
 
 .kitchen-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     background-color: var(--bg-dark);
 }
 
@@ -1236,4 +1239,5 @@ address {
         min-width: 0; /* Allow logo area to shrink */
     }
 }
+
 
