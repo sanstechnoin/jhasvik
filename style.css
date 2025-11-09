@@ -904,13 +904,13 @@ address {
 
 /* --- KDS Header (CONSOLIDATED) --- */
 .kitchen-header {
-    background-color: var(--card-bg);
-    color: var(--gold);
+    background-color: #fff; /* <-- UPDATED */
+    color: #333; /* <-- UPDATED */
     padding: 10px 20px;
     display: flex;
-    justify-content: center; /* <-- THIS IS THE FIX (was space-between) */
+    justify-content: center; 
     align-items: center;
-    border-bottom: 2px solid var(--gold);
+    border-bottom: 1px solid #eee; /* <-- UPDATED */
     position: sticky; 
     top: 0;
     z-index: 100;
@@ -930,7 +930,7 @@ address {
 /* CONSOLIDATED H1 RULE */
 .kitchen-header h1 {
     margin: 0;
-    font-size: 1.2em; /* Was 1.5em, changed to 1.2em */
+    font-size: 1.2em; 
 }
 
 /* --- NEW: Connection Icon styles --- */
@@ -949,6 +949,7 @@ address {
 /* --- KDS Content & Grid --- */
 .kitchen-main {
     padding: 10px;
+    flex-grow: 1; /* <-- ADDED: Pushes footer down */
 }
 
 #kds-content-wrapper {
