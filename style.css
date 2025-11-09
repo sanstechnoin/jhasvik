@@ -1240,4 +1240,222 @@ address {
     }
 }
 
+/* ===============================================
+   NEW BILLING PAGE STYLES
+=============================================== 
+*/
+
+/* --- Billing Page Sticky Footer --- */
+.billing-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-dark);
+}
+
+/* --- Billing Layout --- */
+.billing-main {
+    flex-grow: 1;
+    max-width: none; /* Override default 'main' */
+    padding: 10px;
+}
+
+#billing-content-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    width: 100%;
+    max-width: 1400px; /* Wider than KDS */
+    margin: 0 auto;
+    align-items: flex-start;
+}
+
+/* --- Left Column: Table List --- */
+#table-list-container {
+    flex: 0 0 250px; /* Fixed width */
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+}
+#table-list-container h2 {
+    font-size: 1.3em;
+    margin: 5px 5px 15px 5px;
+    padding-bottom: 10px;
+}
+#table-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+#table-list p {
+    font-style: italic;
+    color: var(--text-subtle);
+    padding: 0 10px;
+}
+.table-list-btn {
+    background-color: #0d163d;
+    color: var(--gold);
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s;
+}
+.table-list-btn:hover {
+    background-color: #333d6b;
+}
+.table-list-btn.selected {
+    background-color: var(--gold);
+    color: #000;
+}
+
+/* --- Right Column: Bill View --- */
+#bill-view-container {
+    flex: 1; /* Takes remaining space */
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+}
+#bill-view-container.hidden {
+    display: none;
+}
+.bill-title {
+    font-size: 1.5em;
+    margin-top: 0;
+}
+#bill-item-list {
+    margin: 20px 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border-color);
+}
+.bill-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+.bill-item .item-name {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+.bill-item .item-price {
+    font-size: 1.1em;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: right;
+}
+.bill-delete-item {
+    background-color: #8B0000;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 28px;
+    margin-left: 15px;
+}
+.bill-total {
+    font-size: 1.8em;
+    color: var(--gold);
+    text-align: right;
+    margin-top: 20px;
+}
+.billing-hr {
+    border: none;
+    border-top: 1px dashed var(--border-color);
+    margin: 25px 0;
+}
+
+/* --- Add Item Form --- */
+#add-item-form {
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping on small screens */
+    gap: 15px;
+    align-items: flex-end;
+}
+#add-item-form h3 {
+    width: 100%;
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+}
+.form-row {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Grow to fill space */
+}
+.form-row-small {
+    flex: 0 0 100px; /* Fixed width for small fields */
+}
+.form-row label {
+    font-size: 0.9em;
+    color: var(--text-subtle);
+    margin-bottom: 5px;
+}
+.form-row input {
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 1em;
+}
+#add-item-btn {
+    background-color: #006400;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 42px; /* Match input height */
+}
+
+/* --- Close Bill Button --- */
+#close-bill-btn {
+    background-color: #8B0000;
+    color: white;
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#close-bill-btn:hover {
+    background-color: #a10000;
+}
+
+/* --- Responsive Billing Page --- */
+@media (max-width: 768px) {
+    #billing-content-wrapper {
+        flex-direction: column;
+    }
+    #table-list-container {
+        flex: 0 0 auto; /* Don't shrink */
+        width: 100%;
+        box-sizing: border-box;
+    }
+    #add-item-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .form-row-small {
+        flex: 1; /* Let them grow to full width */
+    }
+    #add-item-btn {
+        height: auto; /* Reset height */
+    }
+}
 
