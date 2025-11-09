@@ -102,10 +102,11 @@ async function fetchRecords() {
         const query = db.collection("archived_orders")
             .where("closedAt", ">=", firebase.firestore.Timestamp.fromDate(startDate))
             .where("closedAt", "<=", firebase.firestore.Timestamp.fromDate(endDate))
-            .orderBy("closedAt", "desc"); // Show newest first
+            .orderBy("closedAt", "asc"); // Show newest first
 
         const snapshot = await query.get();
-        allFetchedRecords = snapshot.docs.map(doc => doc.data());
+        const records = snapshot.docs.map(doc => doc.data());
+        allFetchedRecords = records.reverse(); // Manually reverse the list
         
         renderRecords(allFetchedRecords);
         calculateSummary(allFetchedRecords);
