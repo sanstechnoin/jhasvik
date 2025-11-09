@@ -32,7 +32,6 @@ let tableOrders = {}; // Holds all active orders: { "1": [order1, order2], "5": 
 let notificationAudio = new Audio('notification.mp3'); // Cache the audio file
 
 // --- 4. KDS Login Logic ---
-// Simple password check. THIS IS NOT SECURE.
 const KITCHEN_PASSWORD = "jhasvikkitchen"; 
 
 loginButton.addEventListener('click', () => {
@@ -57,7 +56,6 @@ passwordInput.addEventListener('keyup', (e) => {
 
 /**
  * Initializes the main Firestore listener.
- * This is called AFTER successful login.
  */
 function initializeKDS() {
     db.collection("orders")
@@ -75,37 +73,30 @@ function initializeKDS() {
                 if (change.type === "added") {
                     console.log("New order received:", orderData.id);
                     
-                    // 1. Add to popup queue
                     orderQueue.push(orderData);
-                    // If this is the first item and no popup is active, show it.
                     if (orderQueue.length === 1 && newOrderPopup.classList.contains('hidden')) {
                         showNextOrderInQueue();
                     }
                     
-                    // 2. Add to internal state
                     if (!tableOrders[tableId]) {
                         tableOrders[tableId] = [];
                     }
                     tableOrders[tableId].push(orderData);
                     
-                    // 3. Re-render the table box
                     updateTableBox(tableId);
                 }
                 
                 if (change.type === "removed") {
                     console.log("Order removed:", orderData.id);
                     
-                    // 1. Remove from internal state
                     if (tableOrders[tableId]) {
                         tableOrders[tableId] = tableOrders[tableId].filter(o => o.id !== orderData.id);
                     }
                     
-                    // 2. Re-render the table box
                     updateTableBox(tableId);
                 }
                 
                 if (change.type === "modified") {
-                    // This handles the "status: seen" update
                     console.log("Order modified (seen):", orderData.id);
                     if (tableOrders[tableId]) {
                        const index = tableOrders[tableId].findIndex(o => o.id === orderData.id);
@@ -128,50 +119,39 @@ function initializeKDS() {
         btn.addEventListener('click', async () => {
             const tableId = btn.dataset.tableId;
             
+            // --- THIS IS THE NEW, SIMPLER LOGIC ---
+            // 1. Get all orders for this table from our local variable
+            const ordersToClear = tableOrders[tableId];
+            
+            if (!ordersToClear || ordersToClear.length === 0) {
+                console.log(`No orders to clear for table ${tableId}.`);
+                return; // Nothing to clear
+            }
+            
             btn.disabled = true;
             btn.textContent = "Clearing...";
 
+            // 2. Create a batch write to UPDATE them to 'cooked'
+            const batch = db.batch();
+            ordersToClear.forEach(order => {
+                const docRef = db.collection("orders").doc(order.id);
+                batch.update(docRef, { status: "cooked" });
+            });
+            
             try {
-                // --- NEW CLEAR LOGIC ---
-                // 1. Query for all active orders for this table
-                const querySnapshot = await db.collection("orders")
-                    .where("table", "==", tableId)
-                    .where("status", "in", ["new", "seen"])
-                    .get();
-
-                if (querySnapshot.empty) {
-                    console.log(`No orders to clear for table ${tableId}.`);
-                    // This will force a UI update just in case state is mismatched
-                    if (tableOrders[tableId]) {
-                        tableOrders[tableId] = [];
-                    }
-                    updateTableBox(tableId);
-                    return;
-                }
-
-                // 2. Create a batch write to UPDATE them to 'cooked'
-                const batch = db.batch();
-                querySnapshot.forEach(doc => {
-                    // WE NOW UPDATE INSTEAD OF DELETE
-                    batch.update(doc.ref, { status: "cooked" }); 
-                });
-                
                 // 3. Commit the batch
                 await batch.commit();
-                
-                console.log(`Successfully cleared all orders for table ${tableId}.`);
+                console.log(`Successfully 'cooked' all orders for table ${tableId}.`);
                 // The 'onSnapshot' listener will automatically handle the "removed"
                 // changes and update the UI.
-
             } catch (e) {
                 console.error(`Error clearing table ${tableId}: `, e);
-                // --- IMPORTANT ---
-                // This is the error that will contain the index link
-                alert(`Could not clear table ${tableId}. Check the console (F12) for an error. You may need to create a Firestore index.`);
+                alert(`Could not clear table ${tableId}. Please try again.`);
             } finally {
                 btn.disabled = false;
                 btn.textContent = `Clear Table ${tableId}`;
             }
+            // --- END OF NEW LOGIC ---
         });
     });
 } // End of initializeKDS()
@@ -182,27 +162,22 @@ function initializeKDS() {
  */
 function updateTableBox(tableId) {
     const tableBox = document.getElementById(`table-${tableId}`);
-    if (!tableBox) return; // Safety check
+    if (!tableBox) return;
     
-    // Get the list AND the empty message elements
     const orderList = tableBox.querySelector('.order-list');
     const emptyMsg = tableBox.querySelector('.order-list-empty');
     
     const orders = tableOrders[tableId];
     
-    // Clear only the list, not the empty message
     orderList.innerHTML = ""; 
     
     if (!orders || orders.length === 0) {
-        // Hide the list, show the empty message
         orderList.style.display = 'none';
         emptyMsg.style.display = 'block';
     } else {
-        // Show the list, hide the empty message
         orderList.style.display = 'block';
         emptyMsg.style.display = 'none';
         
-        // Sort orders by time, oldest first
         orders.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
         
         orders.forEach(order => {
@@ -213,7 +188,6 @@ function updateTableBox(tableId) {
             
             let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
             
-            // This part creates the order group and adds it to the list
             const orderGroupHtml = `
                 <div class="order-group" id="${order.id}">
                     <h4>Order @ ${orderTimestamp}</h4>
@@ -225,7 +199,6 @@ function updateTableBox(tableId) {
             orderList.innerHTML += orderGroupHtml;
         });
 
-        // Flash the box
         tableBox.classList.add('new-order-flash');
         setTimeout(() => {
             tableBox.classList.remove('new-order-flash');
@@ -246,14 +219,12 @@ function showNextOrderInQueue() {
     
     currentPopupOrder = orderQueue.shift(); // Get the first order
     
-    // Build popup content
     let itemsHtml = currentPopupOrder.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
     popupOrderDetails.innerHTML = `
         <h4>Table ${currentPopupOrder.table}</h4>
         <ul>${itemsHtml}</ul>
     `;
     
-    // Show popup and play sound
     newOrderPopup.classList.remove('hidden');
     notificationAudio.play().catch(e => console.warn("Could not play audio:", e));
 }
@@ -269,16 +240,12 @@ function hideNewOrderPopup() {
 // --- 7. Event Listener for Popup Button ---
 
 acceptOrderBtn.addEventListener('click', () => {
-    const acceptedOrder = currentPopupOrder; // Save ref to the order
+    const acceptedOrder = currentPopupOrder; 
     
-    // 1. Hide the current popup
     hideNewOrderPopup();
     
-    // 2. Immediately try to show the next one
     showNextOrderInQueue();
     
-    // 3. Update the accepted order's status in Firebase
-    // This prevents it from re-appearing in the queue on a page refresh
     if (acceptedOrder) {
          db.collection("orders").doc(acceptedOrder.id).update({
              status: "seen"
