@@ -149,10 +149,11 @@ function initializeKDS() {
                     return;
                 }
 
-                // 2. Create a batch write to delete all of them
+                // 2. Create a batch write to UPDATE them to 'cooked'
                 const batch = db.batch();
                 querySnapshot.forEach(doc => {
-                    batch.delete(doc.ref);
+                    // WE NOW UPDATE INSTEAD OF DELETE
+                    batch.update(doc.ref, { status: "cooked" }); 
                 });
                 
                 // 3. Commit the batch
