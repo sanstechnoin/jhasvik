@@ -1335,8 +1335,10 @@ address {
     border-top: 1px solid var(--border-color);
 }
 .bill-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
     align-items: center;
+    gap: 15px;
     justify-content: space-between;
     padding: 15px 10px;
     border-bottom: 1px solid var(--border-color);
@@ -1362,7 +1364,7 @@ address {
     font-weight: bold;
     cursor: pointer;
     line-height: 28px;
-    margin-left: 15px;
+
 }
 .bill-total {
     font-size: 1.8em;
@@ -1458,4 +1460,5 @@ address {
         height: auto; /* Reset height */
     }
 }
+
 
