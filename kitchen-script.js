@@ -1,5 +1,4 @@
 // --- 1. PASTE YOUR FIREBASE CONFIG HERE ---
-// Replace this object with the firebaseConfig keys you copied
 const firebaseConfig = {
   apiKey: "AIzaSyCV6u4t8vLDbrEH_FsBrZHXsG8auh-gOP8",
     authDomain: "jhasvik-de.firebaseapp.com",
@@ -10,121 +9,261 @@ const firebaseConfig = {
 };
 // --- END OF FIREBASE CONFIG ---
 
-
 // --- 2. Initialize Firebase ---
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+// --- 3. Global State and DOM Elements ---
 const connectionStatusEl = document.getElementById('connection-status');
-
-
-// --- 3. DOM Elements ---
 const newOrderPopup = document.getElementById('new-order-popup-overlay');
 const popupOrderDetails = document.getElementById('popup-order-details');
 const acceptOrderBtn = document.getElementById('accept-order-btn');
-const tableGrid = document.querySelector('.table-grid');
 
-let currentPopupOrder = null; // Holds the data for the order in the popup
+// KDS Login
+const loginOverlay = document.getElementById('kitchen-login-overlay');
+const loginButton = document.getElementById('login-button');
+const passwordInput = document.getElementById('kitchen-password');
+const loginError = document.getElementById('login-error');
+const kdsContentWrapper = document.getElementById('kds-content-wrapper');
 
-// --- 4. Main Firestore Listener ---
-// This is the core of the app. It listens for *any* change in the 'orders' collection.
-db.collection("orders").onSnapshot(
-    (snapshot) => {
-        // --- Connection Status ---
-        console.log("Connected to Firestore!");
-        connectionStatusEl.textContent = "Connected";
-        connectionStatusEl.className = "status-connected";
-        
-        // --- Process Changes ---
-        snapshot.docChanges().forEach((change) => {
-            const orderData = change.doc.data();
-            const tableId = `table-${orderData.table}`;
-            const tableBox = document.getElementById(tableId);
+let orderQueue = []; // For stacking popups
+let currentPopupOrder = null; // The order currently in the popup
+let tableOrders = {}; // Holds all active orders: { "1": [order1, order2], "5": [order3] }
+let notificationAudio = new Audio('notification.mp3'); // Cache the audio file
 
-            // A new order was added
-            if (change.type === "added") {
-                console.log("New order for:", tableId, orderData);
-                // Save the data and show the popup
-                currentPopupOrder = orderData;
-                showNewOrderPopup(orderData);
+// --- 4. KDS Login Logic ---
+// Simple password check. THIS IS NOT SECURE.
+const KITCHEN_PASSWORD = "jhasvikkitchen"; 
+
+loginButton.addEventListener('click', () => {
+    if (passwordInput.value === KITCHEN_PASSWORD) {
+        loginOverlay.classList.add('hidden');
+        kdsContentWrapper.style.opacity = '1'; // Show content
+        initializeKDS(); // Start the listener *after* login
+    } else {
+        loginError.style.display = 'block';
+    }
+});
+
+// Allow pressing Enter to log in
+passwordInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+        loginButton.click();
+    }
+});
+
+
+// --- 5. Main KDS Functions ---
+
+/**
+ * Initializes the main Firestore listener.
+ * This is called AFTER successful login.
+ */
+function initializeKDS() {
+    db.collection("orders")
+      .where("status", "in", ["new", "seen"]) // Only listen for active orders
+      .onSnapshot(
+        (snapshot) => {
+            // --- Connection Status ---
+            connectionStatusEl.textContent = "Connected";
+            connectionStatusEl.className = "status-connected";
+            
+            // --- Process Changes ---
+            snapshot.docChanges().forEach((change) => {
+                const orderData = change.doc.data();
+                const tableId = orderData.table;
+
+                if (change.type === "added") {
+                    console.log("New order received:", orderData.id);
+                    
+                    // 1. Add to popup queue
+                    orderQueue.push(orderData);
+                    // If this is the first item and no popup is active, show it.
+                    if (orderQueue.length === 1 && newOrderPopup.classList.contains('hidden')) {
+                        showNextOrderInQueue();
+                    }
+                    
+                    // 2. Add to internal state
+                    if (!tableOrders[tableId]) {
+                        tableOrders[tableId] = [];
+                    }
+                    tableOrders[tableId].push(orderData);
+                    
+                    // 3. Re-render the table box
+                    updateTableBox(tableId);
+                }
+                
+                if (change.type === "removed") {
+                    console.log("Order removed:", orderData.id);
+                    
+                    // 1. Remove from internal state
+                    if (tableOrders[tableId]) {
+                        tableOrders[tableId] = tableOrders[tableId].filter(o => o.id !== orderData.id);
+                    }
+                    
+                    // 2. Re-render the table box
+                    updateTableBox(tableId);
+                }
+                
+                if (change.type === "modified") {
+                    // This handles the "status: seen" update
+                    console.log("Order modified (seen):", orderData.id);
+                    // We could add a visual indicator here, but for now
+                    // we just update the internal state.
+                    if (tableOrders[tableId]) {
+                       const index = tableOrders[tableId].findIndex(o => o.id === orderData.id);
+                       if (index > -1) {
+                           tableOrders[tableId][index] = orderData;
+                       }
+                    }
+                }
+            });
+        },
+        (error) => {
+            // --- Error Handling ---
+            console.error("Error connecting to Firestore: ", error);
+            connectionStatusEl.textContent = "Connection Error";
+            connectionStatusEl.className = "status-disconnected";
+        }
+    );
+
+    // --- Add Listeners for ALL Clear Buttons ---
+    document.querySelectorAll('.clear-table-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const tableId = btn.dataset.tableId;
+            
+            if (!tableOrders[tableId] || tableOrders[tableId].length === 0) {
+                console.log(`No orders to clear for table ${tableId}.`);
+                return; // Nothing to clear
             }
             
-            // An order was modified (e.g., status changed)
-            if (change.type === "modified") {
-                console.log("Modified order:", tableId, orderData);
-                // Just update the tab, don't show a popup
-                updateTableBox(tableBox, orderData);
+            btn.disabled = true;
+            btn.textContent = "Clearing...";
+            
+            // Get all orders for this table
+            const ordersToClear = tableOrders[tableId];
+            
+            // Create a batch write to delete all of them
+            const batch = db.batch();
+            ordersToClear.forEach(order => {
+                const docRef = db.collection("orders").doc(order.id);
+                batch.delete(docRef);
+            });
+            
+            try {
+                await batch.commit();
+                console.log(`Successfully cleared all orders for table ${tableId}.`);
+                // The 'onSnapshot' listener will automatically handle the "removed"
+                // changes and update the UI.
+            } catch (e) {
+                console.error(`Error clearing table ${tableId}: `, e);
+                alert(`Could not clear table ${tableId}. Please try again.`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = `Clear Table ${tableId}`;
             }
         });
-    },
-    (error) => {
-        // --- Error Handling ---
-        console.error("Error connecting to Firestore: ", error);
-        connectionStatusEl.textContent = "Connection Error";
-        connectionStatusEl.className = "status-disconnected";
-    }
-);
+    });
+} // End of initializeKDS()
 
-// --- 5. Popup and Order Handling Functions ---
 
-// Shows the new order popup
-function showNewOrderPopup(orderData) {
-    // We don't show prices, as requested
-    let itemsHtml = orderData.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
+/**
+ * Re-renders a specific table box based on the 'tableOrders' state.
+ */
+function updateTableBox(tableId) {
+    const tableBox = document.getElementById(`table-${tableId}`);
+    if (!tableBox) return; // Safety check
     
-    popupOrderDetails.innerHTML = `
-        <h4>Table ${orderData.table}</h4>
-        <ul>${itemsHtml}</ul>
-    `;
-    newOrderPopup.classList.remove('hidden');
+    const orderList = tableBox.querySelector('.order-list');
+    const emptyMsg = tableBox.querySelector('.order-list-empty');
+    const orders = tableOrders[tableId];
+    
+    orderList.innerHTML = ""; // Clear current list
+    
+    if (!orders || orders.length === 0) {
+        emptyMsg.style.display = 'list-item'; // Show "Waiting..."
+    } else {
+        emptyMsg.style.display = 'none'; // Hide "Waiting..."
+        
+        // Sort orders by time, oldest first
+        orders.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
+        
+        orders.forEach(order => {
+            const orderTimestamp = order.createdAt.toDate().toLocaleTimeString('de-DE', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
+            
+            const orderGroupHtml = `
+                <div class="order-group" id="${order.id}">
+                    <h4>Order @ ${orderTimestamp}</h4>
+                    <ul>
+                        ${itemsHtml}
+                    </ul>
+                </div>
+            `;
+            orderList.innerHTML += orderGroupHtml;
+        });
 
-    // Play a notification sound
-    const audio = new Audio('notification.mp3'); // We'll need to add this file
-    audio.play().catch(e => console.warn("Could not play audio:", e));
+        // Flash the box
+        tableBox.classList.add('new-order-flash');
+        setTimeout(() => {
+            tableBox.classList.remove('new-order-flash');
+        }, 1500);
+    }
 }
 
-// Hides the popup
+// --- 6. Popup Queue Functions ---
+
+/**
+ * Gets the next order from the queue and displays it in the popup.
+ */
+function showNextOrderInQueue() {
+    if (orderQueue.length === 0) {
+        currentPopupOrder = null;
+        return; // No orders left in queue
+    }
+    
+    currentPopupOrder = orderQueue.shift(); // Get the first order
+    
+    // Build popup content
+    let itemsHtml = currentPopupOrder.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
+    popupOrderDetails.innerHTML = `
+        <h4>Table ${currentPopupOrder.table}</h4>
+        <ul>${itemsHtml}</ul>
+    `;
+    
+    // Show popup and play sound
+    newOrderPopup.classList.remove('hidden');
+    notificationAudio.play().catch(e => console.warn("Could not play audio:", e));
+}
+
+/**
+ * Hides the popup.
+ */
 function hideNewOrderPopup() {
     newOrderPopup.classList.add('hidden');
     currentPopupOrder = null;
 }
 
-// Updates the table tab with the new order
-function updateTableBox(tableBox, orderData) {
-    if (!tableBox) return; // Safety check
-    
-    const orderList = tableBox.querySelector('.order-list');
-    // We don't show prices, as requested
-    let itemsHtml = orderData.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
-    
-    orderList.innerHTML = itemsHtml;
-    // Add a 'new' class to flash the box
-    tableBox.classList.add('new-order-flash');
-    setTimeout(() => {
-        tableBox.classList.remove('new-order-flash');
-    }, 2000); // Remove flash after 2 seconds
-}
+// --- 7. Event Listener for Popup Button ---
 
-// --- 6. Event Listeners ---
-
-// When the "Accept Order" button is clicked
 acceptOrderBtn.addEventListener('click', () => {
-    if (currentPopupOrder) {
-        const tableId = `table-${currentPopupOrder.table}`;
-        const tableBox = document.getElementById(tableId);
-        
-        // 1. Update the table box on screen
-        updateTableBox(tableBox, currentPopupOrder);
-        
-        // 2. Hide the popup
-        hideNewOrderPopup();
-        
-        // 3. (Optional but recommended) Update the order status in Firebase
-        // This stops the popup from re-appearing if the kitchen page is refreshed
-        const orderDocId = currentPopupOrder.id; // We'll add this in the final step
-        if (orderDocId) {
-             db.collection("orders").doc(orderDocId).update({
-                 status: "seen"
-             }).catch(e => console.error("Error updating doc:", e));
-        }
+    const acceptedOrder = currentPopupOrder; // Save ref to the order
+    
+    // 1. Hide the current popup
+    hideNewOrderPopup();
+    
+    // 2. Immediately try to show the next one
+    showNextOrderInQueue();
+    
+    // 3. Update the accepted order's status in Firebase
+    // This prevents it from re-appearing in the queue on a page refresh
+    if (acceptedOrder) {
+         db.collection("orders").doc(acceptedOrder.id).update({
+             status: "seen"
+         }).catch(e => console.error("Error updating doc status:", e));
     }
 });
