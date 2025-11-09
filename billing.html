@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jhasvik Billing</title>
+    <link rel="stylesheet" href="style.css?v=27">
+    <link rel="icon" type="image/png" href="favlogo.png">
+</head>
+<body class="billing-body"> <!-- Use a new class for sticky footer -->
+
+    <header class="kitchen-header"> <!-- Re-using KDS header style -->
+        <div class="header-logo">
+            <img src="logo.png" alt="Jhasvik Logo">
+            <h1>Billing Management</h1>
+            <span id="connection-icon">...</span>
+        </div>
+    </header>
+
+    <main class="billing-main">
+        <div id="billing-content-wrapper">
+            <!-- Left Column: List of Tables with open bills -->
+            <div id="table-list-container">
+                <h2>Tables to Bill</h2>
+                <div id="table-list">
+                    <p>No open bills.</p>
+                </div>
+            </div>
+
+            <!-- Right Column: The Bill for the selected table -->
+            <div id="bill-view-container" class="hidden">
+                <h2 class_="bill-title">Bill for Table <span id="bill-table-number"></span></h2>
+                
+                <!-- List of items -->
+                <ul id="bill-item-list">
+                    <!-- Items will be injected here by JS -->
+                </ul>
+                
+                <!-- Bill Total -->
+                <div class="bill-total">
+                    <strong>Total: <span id="bill-total-amount">0.00 €</span></strong>
+                </div>
+
+                <hr class="billing-hr">
+
+                <!-- Add new item form -->
+                <form id="add-item-form">
+                    <h3>Add Manual Item</h3>
+                    <div class="form-row">
+                        <label for="item-name">Item Name</label>
+                        <input type="text" id="item-name" required>
+                    </div>
+                    <div class="form-row form-row-small">
+                        <label for="item-qty">Qty</label>
+                        <input type="number" id="item-qty" value="1" required>
+                    </div>
+                    <div class="form-row form-row-small">
+                        <label for="item-price">Price (€)</label>
+                        <input type="number" id="item-price" step="0.01" required>
+                    </div>
+                    <button type="submit" id="add-item-btn">Add to Bill</button>
+                </form>
+
+                <hr class="billing-hr">
+
+                <!-- Close bill button -->
+                <button id="close-bill-btn">Close Bill (Finalize & Clear)</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Simple sticky footer -->
+    <footer class="site-credit-footer">
+        <div class="footer-line-one">
+            <p class="footer-developer">
+                Created & Developed by <a href="https://sanstechno.in/" target="_blank" rel="noopener">Shri Avinash Narendhran S V</a> +49 162 3757839
+            </p>
+            <p class="footer-copyright">
+                &copy; Jhasvik, Düsseldorf 2025
+            </p>
+        </div>
+   </footer>   
+
+    <!-- Login Overlay (same as KDS) -->
+    <div id="billing-login-overlay" class="kitchen-popup-overlay">
+        <div class="kitchen-popup-box">
+            <h3>Billing Login</h3>
+            <p>Please enter the management password.</p>
+            <input type="password" id="billing-password" placeholder="Password">
+            <p id="login-error" style="color: red; display: none;">Invalid Password</p>
+            <button id="login-button">Login</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <!-- New JS file for this page -->
+    <script src="billing-script.js?v=1"></script>
+
+</body>
+</html>
+
