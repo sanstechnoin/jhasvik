@@ -14,7 +14,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // --- 3. Global State and DOM Elements ---
-const connectionIconEl = document.getElementById('connection-icon'); // <-- CHANGED
+const connectionIconEl = document.getElementById('connection-icon'); 
 const newOrderPopup = document.getElementById('new-order-popup-overlay');
 const popupOrderDetails = document.getElementById('popup-order-details');
 const acceptOrderBtn = document.getElementById('accept-order-btn');
@@ -65,7 +65,7 @@ function initializeKDS() {
       .onSnapshot(
         (snapshot) => {
             // --- Connection Status ---
-            connectionIconEl.textContent = '✅'; // <-- CHANGED
+            connectionIconEl.textContent = '✅'; 
             
             // --- Process Changes ---
             snapshot.docChanges().forEach((change) => {
@@ -119,7 +119,7 @@ function initializeKDS() {
         (error) => {
             // --- Error Handling ---
             console.error("Error connecting to Firestore: ", error);
-            connectionIconEl.textContent = '❌'; // <-- CHANGED
+            connectionIconEl.textContent = '❌'; 
         }
     );
 
@@ -128,32 +128,45 @@ function initializeKDS() {
         btn.addEventListener('click', async () => {
             const tableId = btn.dataset.tableId;
             
-            if (!tableOrders[tableId] || tableOrders[tableId].length === 0) {
-                console.log(`No orders to clear for table ${tableId}.`);
-                return; // Nothing to clear
-            }
-            
             btn.disabled = true;
             btn.textContent = "Clearing...";
-            
-            // Get all orders for this table
-            const ordersToClear = tableOrders[tableId];
-            
-            // Create a batch write to delete all of them
-            const batch = db.batch();
-            ordersToClear.forEach(order => {
-                const docRef = db.collection("orders").doc(order.id);
-                batch.delete(docRef);
-            });
-            
+
             try {
+                // --- NEW CLEAR LOGIC ---
+                // 1. Query for all active orders for this table
+                const querySnapshot = await db.collection("orders")
+                    .where("table", "==", tableId)
+                    .where("status", "in", ["new", "seen"])
+                    .get();
+
+                if (querySnapshot.empty) {
+                    console.log(`No orders to clear for table ${tableId}.`);
+                    // This will force a UI update just in case state is mismatched
+                    if (tableOrders[tableId]) {
+                        tableOrders[tableId] = [];
+                    }
+                    updateTableBox(tableId);
+                    return;
+                }
+
+                // 2. Create a batch write to delete all of them
+                const batch = db.batch();
+                querySnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                // 3. Commit the batch
                 await batch.commit();
+                
                 console.log(`Successfully cleared all orders for table ${tableId}.`);
                 // The 'onSnapshot' listener will automatically handle the "removed"
                 // changes and update the UI.
+
             } catch (e) {
                 console.error(`Error clearing table ${tableId}: `, e);
-                alert(`Could not clear table ${tableId}. Please try again.`);
+                // --- IMPORTANT ---
+                // This is the error that will contain the index link
+                alert(`Could not clear table ${tableId}. Check the console (F12) for an error. You may need to create a Firestore index.`);
             } finally {
                 btn.disabled = false;
                 btn.textContent = `Clear Table ${tableId}`;
@@ -170,11 +183,9 @@ function updateTableBox(tableId) {
     const tableBox = document.getElementById(`table-${tableId}`);
     if (!tableBox) return; // Safety check
     
-    // --- THIS IS THE FIX ---
     // Get the list AND the empty message elements
     const orderList = tableBox.querySelector('.order-list');
     const emptyMsg = tableBox.querySelector('.order-list-empty');
-    // --- END OF FIX ---
     
     const orders = tableOrders[tableId];
     
@@ -182,17 +193,13 @@ function updateTableBox(tableId) {
     orderList.innerHTML = ""; 
     
     if (!orders || orders.length === 0) {
-        // --- THIS IS THE FIX ---
         // Hide the list, show the empty message
         orderList.style.display = 'none';
         emptyMsg.style.display = 'block';
-        // --- END OF FIX ---
     } else {
-        // --- THIS IS THE FIX ---
         // Show the list, hide the empty message
         orderList.style.display = 'block';
         emptyMsg.style.display = 'none';
-        // --- END OF FIX ---
         
         // Sort orders by time, oldest first
         orders.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
