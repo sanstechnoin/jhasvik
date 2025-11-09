@@ -1116,7 +1116,9 @@ address {
 }
 
 /* --- KDS Login Specifics (FIXED OVERLAP) --- */
-#kitchen-password {
+#kitchen-password,
+#billing-password,
+#records-password {
     background-color: var(--bg-dark); /* Dark input field */
     color: var(--text-main);
     border: 1px solid var(--border-color);
@@ -1128,7 +1130,7 @@ address {
     margin-bottom: 10px; /* Added margin */
 }
 
-#login-button {
+.kitchen-popup-box button {
     background-color: var(--gold); /* Gold button */
     color: #000;
     border: none;
@@ -1137,9 +1139,13 @@ address {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.2s;
-    width: 100%; /* Added width 100% */
-    box-sizing: border-box; /* Added for correct width */
-    margin-top: 15px; /* Added margin */
+    width: 100%; 
+    box-sizing: border-box; 
+    margin-top: 15px; 
+}
+
+.kitchen-popup-box button:hover {
+    background-color: #b8860b;
 }
 #login-button:hover {
     background-color: #b8860b;
@@ -1656,4 +1662,5 @@ address {
         color: #000;
     }
 }
+
 
