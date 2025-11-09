@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jhasvik Kitchen Display</title>
-    <link rel="stylesheet" href="style.css?v=22">
+    <link rel="stylesheet" href="style.css?v=23"> <!-- Version updated -->
     <link rel="icon" type="image/png" href="favlogo.png">
 </head>
 <body class="kitchen-body">
@@ -12,133 +12,134 @@
     <header class="kitchen-header">
         <div class="header-logo">
             <img src="logo.png" alt="Jhasvik Logo">
-            <h1>Kitchen Display System</h1>
+            <h1>Kitchen Display System <span id="connection-icon"></span></h1>
         </div>
-        <div id="connection-status" class="status-disconnected">
-            Connecting...
-        </div>
+        <!-- The button is now gone -->
     </header>
 
     <main class="kitchen-main">
-        <div id="kds-content-wrapper"> <div class="table-grid">
+        <div id="kds-content-wrapper">
+            <div class="table-grid">
                 
+                <!-- Table 1 -->
                 <div class="table-box" id="table-1">
                     <div class="table-header">
                         <h2>Table 1</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
+                    <ul class="order-list" style="display: none;">
+                        <!-- Orders will be injected here by JS -->
                     </ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="1">Clear Table 1</button>
                 </div>
                 
+                <!-- Table 2 -->
                 <div class="table-box" id="table-2">
                     <div class="table-header">
                         <h2>Table 2</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="2">Clear Table 2</button>
                 </div>
                 
+                <!-- Table 3 -->
                 <div class="table-box" id="table-3">
                     <div class="table-header">
                         <h2>Table 3</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="3">Clear Table 3</button>
                 </div>
                 
+                <!-- Table 4 -->
                 <div class="table-box" id="table-4">
                     <div class="table-header">
                         <h2>Table 4</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="4">Clear Table 4</button>
                 </div>
                 
+                <!-- Table 5 -->
                 <div class="table-box" id="table-5">
                     <div class="table-header">
                         <h2>Table 5</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="5">Clear Table 5</button>
                 </div>
                 
+                <!-- Table 6 -->
                 <div class="table-box" id="table-6">
                     <div class="table-header">
                         <h2>Table 6</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="6">Clear Table 6</button>
                 </div>
                 
+                <!-- Table 7 -->
                 <div class="table-box" id="table-7">
                     <div class="table-header">
                         <h2>Table 7</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="7">Clear Table 7</button>
                 </div>
                 
+                <!-- Table 8 -->
                 <div class="table-box" id="table-8">
                     <div class="table-header">
                         <h2>Table 8</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="8">Clear Table 8</button>
                 </div>
                 
+                <!-- Table 9 -->
                 <div class="table-box" id="table-9">
                     <div class="table-header">
                         <h2>Table 9</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="9">Clear Table 9</button>
                 </div>
                 
+                <!-- Table 10 -->
                 <div class="table-box" id="table-10">
                     <div class="table-header">
                         <h2>Table 10</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="10">Clear Table 10</button>
                 </div>
                 
+                <!-- Table 11 -->
                 <div class="table-box" id="table-11">
                     <div class="table-header">
                         <h2>Table 11</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="11">Clear Table 11</button>
                 </div>
                 
+                <!-- Table 12 -->
                 <div class="table-box" id="table-12">
                     <div class="table-header">
                         <h2>Table 12</h2>
                     </div>
-                    <ul class="order-list">
-                        <li class="order-list-empty">Waiting for order...</li>
-                    </ul>
+                    <ul class="order-list" style="display: none;"></ul>
+                    <div class="order-list-empty">Waiting for order...</div>
                     <button class="clear-table-btn" data-table-id="12">Clear Table 12</button>
                 </div>
                 
@@ -146,11 +147,13 @@
         </div>
     </main>
 
+    <!-- Popup and Login overlays are unchanged -->
     <div id="new-order-popup-overlay" class="kitchen-popup-overlay hidden">
         <div class="kitchen-popup-box">
             <h3>🔔 New Order! 🔔</h3>
             <div id="popup-order-details">
-                </div>
+                <!-- Content injected by JS -->
+            </div>
             <button id="accept-order-btn">Accept Order</button>
         </div>
     </div>
@@ -167,5 +170,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="kitchen-script.js?v=2"></script> </body>
+    <script src="kitchen-script.js?v=3"></script> <!-- Version updated -->
+
+</body>
 </html>
