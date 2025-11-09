@@ -933,20 +933,18 @@ address {
     font-size: 1.2em; /* Was 1.5em, changed to 1.2em */
 }
 
+/* --- NEW: Connection Icon styles --- */
+#connection-icon {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 0.8em;
+}
+
+/* --- NEW: Remove old button styles --- */
 #connection-status {
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 5px;
-    flex-shrink: 0; /* Prevents button from shrinking */
+    display: none; 
 }
-.status-disconnected {
-    background-color: #8B0000; /* Dark Red */
-    color: white;
-}
-.status-connected {
-    background-color: #006400; /* Dark Green */
-    color: white;
-}
+
 
 /* --- KDS Content & Grid --- */
 .kitchen-main {
@@ -1008,12 +1006,13 @@ address {
     overflow-y: auto;
 }
 
-/* This is the "Waiting..." text */
+/* --- NEW: This is the "Waiting..." text --- */
 .order-list-empty {
     color: var(--text-subtle);
     font-style: italic;
     padding: 15px;
-    display: list-item; /* Will be hidden by JS if items exist */
+    display: block; /* Show by default, JS will hide it */
+    flex-grow: 1; /* This is new, helps fill space */
 }
 
 /* Styles for Appended Order Groups */
@@ -1035,12 +1034,13 @@ address {
     padding: 0;
     margin: 0;
 }
+/* --- NEW: Override for li inside order-group --- */
 .order-group li {
     padding: 2px 0 2px 10px;
     font-size: 0.95em;
     line-height: 1.4;
-    /* This overrides the base 'li' styles */
     border-bottom: none; 
+    display: list-item; /* Ensure it behaves as a list item */
 }
 
 
@@ -1167,9 +1167,11 @@ address {
     line-height: 1.7;
 }
 
+/* --- NEW: Override for li inside popup --- */
 #popup-order-details li {
     padding: 0;
     border-bottom: none;
+    display: list-item;
 }
 
 #accept-order-btn {
