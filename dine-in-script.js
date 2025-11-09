@@ -248,17 +248,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         const orderId = `${tableNumber}-${new Date().getTime()}`;
 
         const orderData = {
-            id: orderId,
+            id: orderId, // Use the unique ID
             table: tableNumber,
             items: itemsOnly,
             status: "new",
-            createdAt: new Date()
+            createdAt: new Date() // Use Firebase server timestamp
         };
 
         try {
-            // Send to Firebase
-            // We use .set() to *replace* the order for that table, as you requested.
-            await db.collection("orders").doc(`table-${tableNumber}`).set(orderData);
+            // --- THIS IS THE CHANGE ---
+            // Send to Firebase using the unique orderId as the document ID
+            await db.collection("orders").doc(orderId).set(orderData);
+            // --- END OF CHANGE ---
             
             showConfirmationScreen();
 
@@ -301,7 +302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }).catch(error => {
             alert("Order failed. Please check your connection or call a waiter.");
         }).finally(() => {
-            formboldBtn.innerText = "Send via Email (Test)";
+            formboldBtn.innerText = "Send via External App";
             formboldBtn.disabled = false;
             firebaseBtn.disabled = false;
         });
