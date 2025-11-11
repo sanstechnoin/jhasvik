@@ -1771,3 +1771,28 @@ address {
     }
 }
 
+/* ===============================================
+   NEW STYLES FOR ORDER NOTES
+=============================================== 
+*/
+
+/* Style for notes in the table/pickup box */
+.order-notes {
+    font-size: 0.95em;
+    font-weight: bold;
+    color: #e04040; /* Red */
+    padding: 10px 15px 5px 15px;
+    margin: 0;
+    border-top: 1px dashed var(--border-color);
+}
+
+/* Style for notes in the popup */
+.popup-notes {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #8B0000; /* Darker Red */
+    background-color: #fdd;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
