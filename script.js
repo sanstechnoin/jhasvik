@@ -514,6 +514,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     firebaseBtn.addEventListener('click', async () => {
         const name = document.getElementById('customer-name').value;
         const phone = document.getElementById('customer-phone').value;
+        const notes = document.getElementById('customer-notes').value; // <-- Get notes
         
         if (!name || !phone) {
             alert("Please enter your name and phone number.");
@@ -541,8 +542,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             // Show confirmation
             let finalSummary = `Customer: ${name}\nPhone: ${phone}\n\n${summaryText}\n${discountText}Total: ${total.toFixed(2)} €`;
-            if (customerNotes) { // Also include notes here
-                finalSummary += `\n\nNotes:\n${document.getElementById('customer-notes').value}`;
+            if (notes) { // Also include notes here
+                finalSummary += `\n\nNotes:\n${notes}`;
             }
             confirmationSummaryEl.innerText = finalSummary;
             cartContentEl.style.display = 'none'; 
@@ -650,9 +651,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 });
                 discountAmount = appliedCoupon.value * applicableItems;
+                discountText = `Discount (${appliedCoupon.code})`; // <-- FIX: Was missing
             } 
             else if (appliedCoupon.discountType === 'percent') {
                 discountAmount = discountableSubtotal * appliedCoupon.value;
+                discountText = `Discount (${(appliedCoupon.value * 100).toFixed(0)}%)`; // <-- FIX: Was missing
             }
             discountAmount = Math.min(subtotal, discountAmount);
             
