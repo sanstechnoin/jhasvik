@@ -1,3 +1,17 @@
+// --- 1. ADD THIS CONFIG to the very top ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCV6u4t8vLDbrEH_FsBrZHXsG8auh-gOP8",
+    authDomain: "jhasvik-de.firebaseapp.com",
+    projectId: "jhasvik-de",
+    storageBucket: "jhasvik-de.firebasestorage.app",
+    messagingSenderId: "415679545793",
+    appId: "1:415679545793:web:880c5963d930f6ea4bef40"
+};
+
+// --- 2. ADD THESE LINES to initialize Firebase ---
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 // Global cart variables
 let cart = [];
 let appliedCoupon = null;
@@ -425,10 +439,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- 6. Checkout Logic (AJAX submission) ---
     orderForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const { summaryText, total, discountText } = generateOrderSummary();
+        
+        // --- MODIFIED: Get itemsOnly as well ---
+        const { summaryText, total, discountText, itemsOnly } = generateOrderSummary();
         const customerName = document.getElementById('customer-name').value;
         const customerPhone = document.getElementById('customer-phone').value;
         const customerNotes = document.getElementById('customer-notes').value;
+
+        // --- NEW: SAVE TO FIREBASE ---
+        const orderId = `pickup-${new Date().getTime()}`;
+        const orderData = {
+            id: orderId,
+            table: customerName, // Use customer name as the "table" identifier
+            customerName: customerName, // Also save it as a separate field
+            items: itemsOnly, // The array of items with prices
+            status: "new",
+            orderType: "pickup", // This is how the KDS will know
+            createdAt: new Date()
+        };
+        
+        // Save to Firebase first (this is fast)
+        db.collection("orders").doc(orderId).set(orderData)
+            .catch(e => console.error("Could not save order to Firebase KDS", e));
+        // --- END OF NEW FIREBASE SAVE ---
 
         document.getElementById('order-details-input').value = `${summaryText}\n${discountText}`;
         document.getElementById('order-total-input').value = `${total.toFixed(2)} €`;
@@ -484,7 +517,25 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert("Please enter your name and phone number.");
             return;
         }
-        const { summaryText, total, discountText } = generateOrderSummary();
+        
+        // --- MODIFIED: Get itemsOnly as well ---
+        const { summaryText, total, discountText, itemsOnly } = generateOrderSummary();
+        
+        // --- NEW: SAVE TO FIREBASE (Also for WhatsApp button) ---
+        const orderId = `pickup-${new Date().getTime()}`;
+        const orderData = {
+            id: orderId,
+            table: name, // Use customer name
+            customerName: name, 
+            items: itemsOnly, 
+            status: "new",
+            orderType: "pickup", 
+            createdAt: new Date()
+        };
+        
+        db.collection("orders").doc(orderId).set(orderData)
+            .catch(e => console.error("Could not save order to Firebase KDS", e));
+        // --- END OF NEW FIREBASE SAVE ---
         
         const WHATSAPP_NUMBER = config.whatsappNumber;
         if (!WHATSAPP_NUMBER) {
@@ -503,12 +554,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.open(whatsappURL, '_blank');
     });
 
+    // --- 7. UPDATE THIS FUNCTION ---
     function generateOrderSummary() {
         let summaryText = "";
         let subtotal = 0;
+        let itemsOnly = []; // <-- ADD THIS
+
         cart.forEach(item => {
             summaryText += `${item.quantity}x ${item.name} (${(item.price * item.quantity).toFixed(2)} €)\n`;
             subtotal += item.price * item.quantity;
+            
+            // <-- ADD THIS to include price
+            itemsOnly.push({
+                quantity: item.quantity,
+                name: item.name,
+                price: item.price
+            });
         });
 
         let discountAmount = 0;
@@ -547,7 +608,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         
         let total = subtotal - discountAmount;
-        return { summaryText, subtotal, discountText, total };
+        
+        // --- UPDATE THE RETURN VALUE ---
+        return { summaryText, subtotal, discountText, total, itemsOnly };
     }
     
     // Initial check on page load
