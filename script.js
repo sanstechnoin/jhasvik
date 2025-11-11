@@ -21,14 +21,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     let config;
     try {
+        // Fetch the config file
         const response = await fetch('config.json?v=23'); 
         config = await response.json();
     } catch (error) {
         console.error("Failed to load config.json", error);
+        // If config fails, use empty defaults
         config = { promoPopup: {}, coupons: [], whatsappNumber: "", featuredCouponCode: "" };
     }
 
-    // --- 1. Sticky Header Scroll Padding ---
+    // --- 1. Sticky Header Scroll Padding (Corrected Version) ---
     const header = document.querySelector('header');
     const headerNav = document.querySelector('header nav');
     function updateScrollPadding() {
@@ -37,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.documentElement.style.setProperty('scroll-padding-top', `${headerHeight}px`);
 
             if (headerNav) {
+                // This tells the nav bar where to stick
                 const navHeight = headerNav.offsetHeight;
                 const topPartHeight = headerHeight - navHeight;
                 headerNav.style.top = `${topPartHeight}px`;
@@ -47,13 +50,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener('resize', updateScrollPadding);
 
     // --- 2. Nav Scroller (Fade Effect Logic) ---
+    // This adds/removes the fade classes based on scroll position
     const navLinksContainer = document.getElementById('nav-links-container');
     if (navLinksContainer) {
         const navWrapper = navLinksContainer.closest('.nav-wrapper');
         const updateFadeVisibility = () => {
             if (!navWrapper) return;
             const maxScroll = navLinksContainer.scrollWidth - navLinksContainer.clientWidth;
+            // Add 'fade-left' if scrolled more than 1px
             navWrapper.classList.toggle('fade-left', navLinksContainer.scrollLeft > 1);
+            // Add 'fade-right' if not scrolled all the way to the end
             navWrapper.classList.toggle('fade-right', navLinksContainer.scrollLeft < maxScroll - 1);
         };
 
@@ -69,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- 3. DYNAMIC Promotional Popup & Marquee ---
     const promo = config.promoPopup;
     const promoPopup = document.getElementById('popup-overlay');
-    const closePromoBtn = document.getElementById('close-popup');
+    const closePromoBtn = document.getElementById('close-popup'); // <--- THIS IS THE BUTTON
     const marqueeContainer = document.getElementById('marquee-container');
     const marqueeText = document.getElementById('marquee-text');
 
@@ -104,12 +110,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         marqueeContainer.addEventListener('mouseout', () => marqueeText.classList.remove('paused'));
     }
 
+    // --- THIS IS THE FIX ---
     if (promoPopup && closePromoBtn) {
         const lastShown = localStorage.getItem('promoLastShown');
         const twentyFourHours = 24 * 60 * 60 * 1000;
         const now = new Date().getTime();
 
-        promoPopup.style.display = 'none'; 
+        // Use style.display = 'flex' to show it, because the CSS uses display: flex
+        promoPopup.style.display = 'none'; // Start as hidden
 
         if (isPromoActive() && (!lastShown || (now - lastShown > twentyFourHours))) {
             const line1El = document.getElementById('promo-line-1');
@@ -118,15 +126,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (line2El) line2El.innerText = promo.line2;
             
             setTimeout(() => {
-                promoPopup.style.display = 'flex'; 
+                promoPopup.style.display = 'flex'; // <-- CORRECTED
                 localStorage.setItem('promoLastShown', now.toString());
-            }, 5000); 
+            }, 5000); // 5 second delay
         }
 
+        // This is the corrected event listener
         closePromoBtn.addEventListener('click', () => {
-            promoPopup.style.display = 'none'; 
+            promoPopup.style.display = 'none'; // <-- CORRECTED
         });
     }
+    // --- END OF FIX ---
 
     // --- 4. Shopping Cart Logic (Full Pickup Version) ---
     const cartToggleBtn = document.getElementById('cart-toggle-btn');
@@ -148,6 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const confirmationCloseBtn = document.getElementById('confirmation-close-btn');
     const couponHintEl = document.getElementById('coupon-hint');
 
+    // Show Featured Coupon Hint
     if (config.featuredCouponCode && couponHintEl) {
         const featuredCoupon = config.coupons.find(c => c.code === config.featuredCouponCode);
         if (featuredCoupon) {
@@ -176,6 +187,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (confirmationCloseBtn) confirmationCloseBtn.addEventListener('click', closeCart);
     
     function openCart() {
+        // --- CORRECTED: Use style.display to prevent bugs ---
         cartContentEl.style.display = 'block'; 
         orderConfirmationEl.style.display = 'none'; 
         cartOverlay.classList.remove('hidden');
@@ -184,6 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     function closeCart() { 
         cartOverlay.classList.add('hidden'); 
+        // Reset view for next time
         setTimeout(() => {
             cartContentEl.style.display = 'block';
             orderConfirmationEl.style.display = 'none';
@@ -198,10 +211,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     consentCheckbox.addEventListener('change', toggleCheckoutButtons);
 
-    // (The cart functions: initItemControls, handleAddToCartClick, 
-    // handleRemoveFromCartClick, addToCart, updateCart, 
-    // addCartItemControls, adjustQuantity... are all unchanged)
-
+    // Initialize ALL item controls
     function initItemControls() {
         document.querySelectorAll('.add-btn').forEach(button => {
             button.removeEventListener('click', handleAddToCartClick);
@@ -513,7 +523,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         firebaseBtn.innerText = "Sending...";
         firebaseBtn.disabled = true;
 
-        const { summaryText, total, itemsOnly } = generateOrderSummary();
+        const { summaryText, total, discountText, itemsOnly } = generateOrderSummary(); // <-- Make sure to get itemsOnly
         const orderId = `pickup-${new Date().getTime()}`;
         const orderData = {
             id: orderId,
@@ -530,7 +540,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             await db.collection("orders").doc(orderId).set(orderData);
             
             // Show confirmation
-            let finalSummary = `Customer: ${name}\nPhone: ${phone}\n\n${summaryText}\nTotal: ${total.toFixed(2)} €`;
+            let finalSummary = `Customer: ${name}\nPhone: ${phone}\n\n${summaryText}\n${discountText}Total: ${total.toFixed(2)} €`;
+            if (customerNotes) { // Also include notes here
+                finalSummary += `\n\nNotes:\n${document.getElementById('customer-notes').value}`;
+            }
             confirmationSummaryEl.innerText = finalSummary;
             cartContentEl.style.display = 'none'; 
             orderConfirmationEl.style.display = 'block'; 
