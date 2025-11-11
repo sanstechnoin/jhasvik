@@ -67,7 +67,8 @@ function createDineInTables() {
                 <h2>Table ${i}</h2>
             </div>
             <ul class="order-list" data-table-id="${i}">
-                </ul>
+                <!-- Orders will be injected here -->
+            </ul>
             <p class="order-list-empty" data-table-id="${i}">Waiting for order...</p>
             <button class="clear-table-btn" data-table-id="${i}">Clear Table ${i}</button>
         `;
@@ -155,7 +156,7 @@ function renderDineInTable(tableId) {
     
     const orderList = tableBox.querySelector('.order-list');
     const emptyMsg = tableBox.querySelector('.order-list-empty');
-    const clearBtn = tableBox.querySelector('.clear-table-btn'); // <-- GET THE BUTTON
+    const clearBtn = tableBox.querySelector('.clear-table-btn'); 
 
     const ordersForThisTable = Object.values(allOrders).filter(o => o.table === tableId && o.orderType !== 'pickup');
     
@@ -163,10 +164,11 @@ function renderDineInTable(tableId) {
     
     if (ordersForThisTable.length === 0) {
         orderList.style.display = 'none';
-        emptyMsg.style.display = 'block';
         
         // --- THIS IS THE FIX ---
-        // If the table is empty, re-enable the button
+        emptyMsg.textContent = "Waiting for order..."; // Force reset text
+        emptyMsg.style.display = 'block';
+        
         clearBtn.disabled = false;
         clearBtn.textContent = `Clear Table ${tableId}`;
         // --- END OF FIX ---
@@ -185,12 +187,20 @@ function renderDineInTable(tableId) {
             
             let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
             
+            // --- NEW: Check for notes ---
+            let notesHtml = '';
+            if (order.notes && order.notes.trim() !== '') {
+                notesHtml = `<p class="order-notes">⚠️ Notes: ${order.notes}</p>`;
+            }
+            // --- END NEW ---
+
             const orderGroupHtml = `
                 <div class="order-group" id="${order.id}">
                     <h4>Order @ ${orderTimestamp}</h4>
                     <ul>
                         ${itemsHtml}
                     </ul>
+                    ${notesHtml} <!-- ADDED NOTES HERE -->
                 </div>
             `;
             orderList.innerHTML += orderGroupHtml;
@@ -226,6 +236,13 @@ function renderPickupGrid() {
         
         let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
 
+        // --- NEW: Check for notes ---
+        let notesHtml = '';
+        if (order.notes && order.notes.trim() !== '') {
+            notesHtml = `<p class="order-notes">⚠️ Notes: ${order.notes}</p>`;
+        }
+        // --- END NEW ---
+
         const pickupBox = document.createElement('div');
         pickupBox.className = 'pickup-box';
         pickupBox.id = `pickup-${order.id}`;
@@ -237,6 +254,7 @@ function renderPickupGrid() {
             <ul class="order-list">
                 ${itemsHtml}
             </ul>
+            ${notesHtml} <!-- ADDED NOTES HERE -->
             <button class="clear-pickup-btn" data-customer-name="${order.customerName}">Order Complete</button>
         `;
         pickupGrid.appendChild(pickupBox);
@@ -259,10 +277,10 @@ async function handleClearOrder(identifier, type, buttonElement) {
 
     if (type === 'dine-in') {
         ordersToClear = Object.values(allOrders).filter(o => o.table === identifier && o.orderType !== 'pickup');
-        buttonsToDisable = document.querySelectorAll(`[data-table-id="${identifier}"]`);
+        buttonsToDisable = document.querySelectorAll(`button[data-table-id="${identifier}"]`);
     } else {
         ordersToClear = Object.values(allOrders).filter(o => o.customerName === identifier && o.orderType === 'pickup');
-        buttonsToDisable = document.querySelectorAll(`[data-customer-name="${identifier}"]`);
+        buttonsToDisable = document.querySelectorAll(`button[data-customer-name="${identifier}"]`);
     }
 
     if (ordersToClear.length === 0) {
@@ -317,9 +335,17 @@ function showNextOrderInQueue() {
         title = `🔔 Table ${currentPopupOrder.table}`;
     }
 
+    // --- NEW: Add notes to popup ---
+    let notesHtml = '';
+    if (currentPopupOrder.notes && currentPopupOrder.notes.trim() !== '') {
+        notesHtml = `<p class="popup-notes">⚠️ Notes: ${currentPopupOrder.notes}</p>`;
+    }
+    // --- END NEW ---
+
     popupOrderDetails.innerHTML = `
         <h4>${title}</h4>
         <ul>${itemsHtml}</ul>
+        ${notesHtml} <!-- ADDED NOTES HERE -->
     `;
     
     newOrderPopup.classList.remove('hidden');
