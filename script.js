@@ -21,16 +21,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     let config;
     try {
-        // Fetch the config file
         const response = await fetch('config.json?v=23'); 
         config = await response.json();
     } catch (error) {
         console.error("Failed to load config.json", error);
-        // If config fails, use empty defaults
         config = { promoPopup: {}, coupons: [], whatsappNumber: "", featuredCouponCode: "" };
     }
 
-    // --- 1. Sticky Header Scroll Padding (Corrected Version) ---
+    // --- 1. Sticky Header Scroll Padding ---
     const header = document.querySelector('header');
     const headerNav = document.querySelector('header nav');
     function updateScrollPadding() {
@@ -39,7 +37,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.documentElement.style.setProperty('scroll-padding-top', `${headerHeight}px`);
 
             if (headerNav) {
-                // This tells the nav bar where to stick
                 const navHeight = headerNav.offsetHeight;
                 const topPartHeight = headerHeight - navHeight;
                 headerNav.style.top = `${topPartHeight}px`;
@@ -50,16 +47,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener('resize', updateScrollPadding);
 
     // --- 2. Nav Scroller (Fade Effect Logic) ---
-    // This adds/removes the fade classes based on scroll position
     const navLinksContainer = document.getElementById('nav-links-container');
     if (navLinksContainer) {
         const navWrapper = navLinksContainer.closest('.nav-wrapper');
         const updateFadeVisibility = () => {
             if (!navWrapper) return;
             const maxScroll = navLinksContainer.scrollWidth - navLinksContainer.clientWidth;
-            // Add 'fade-left' if scrolled more than 1px
             navWrapper.classList.toggle('fade-left', navLinksContainer.scrollLeft > 1);
-            // Add 'fade-right' if not scrolled all the way to the end
             navWrapper.classList.toggle('fade-right', navLinksContainer.scrollLeft < maxScroll - 1);
         };
 
@@ -75,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- 3. DYNAMIC Promotional Popup & Marquee ---
     const promo = config.promoPopup;
     const promoPopup = document.getElementById('popup-overlay');
-    const closePromoBtn = document.getElementById('close-popup'); // <--- THIS IS THE BUTTON
+    const closePromoBtn = document.getElementById('close-popup');
     const marqueeContainer = document.getElementById('marquee-container');
     const marqueeText = document.getElementById('marquee-text');
 
@@ -110,14 +104,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         marqueeContainer.addEventListener('mouseout', () => marqueeText.classList.remove('paused'));
     }
 
-    // --- THIS IS THE FIX ---
     if (promoPopup && closePromoBtn) {
         const lastShown = localStorage.getItem('promoLastShown');
         const twentyFourHours = 24 * 60 * 60 * 1000;
         const now = new Date().getTime();
 
-        // Use style.display = 'flex' to show it, because the CSS uses display: flex
-        promoPopup.style.display = 'none'; // Start as hidden
+        promoPopup.style.display = 'none'; 
 
         if (isPromoActive() && (!lastShown || (now - lastShown > twentyFourHours))) {
             const line1El = document.getElementById('promo-line-1');
@@ -126,17 +118,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (line2El) line2El.innerText = promo.line2;
             
             setTimeout(() => {
-                promoPopup.style.display = 'flex'; // <-- CORRECTED
+                promoPopup.style.display = 'flex'; 
                 localStorage.setItem('promoLastShown', now.toString());
-            }, 5000); // 5 second delay
+            }, 5000); 
         }
 
-        // This is the corrected event listener
         closePromoBtn.addEventListener('click', () => {
-            promoPopup.style.display = 'none'; // <-- CORRECTED
+            promoPopup.style.display = 'none'; 
         });
     }
-    // --- END OF FIX ---
 
     // --- 4. Shopping Cart Logic (Full Pickup Version) ---
     const cartToggleBtn = document.getElementById('cart-toggle-btn');
@@ -158,7 +148,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const confirmationCloseBtn = document.getElementById('confirmation-close-btn');
     const couponHintEl = document.getElementById('coupon-hint');
 
-    // Show Featured Coupon Hint
     if (config.featuredCouponCode && couponHintEl) {
         const featuredCoupon = config.coupons.find(c => c.code === config.featuredCouponCode);
         if (featuredCoupon) {
@@ -179,12 +168,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const emailSubmitBtn = orderForm.querySelector('.checkout-email');
     const whatsappBtn = document.getElementById('whatsapp-btn');
     
+    // --- NEW: Get the kitchen button ---
+    const firebaseBtn = document.getElementById('firebase-btn'); 
+    
     if (cartToggleBtn) cartToggleBtn.addEventListener('click', openCart);
     if (cartCloseBtn) cartCloseBtn.addEventListener('click', closeCart);
     if (confirmationCloseBtn) confirmationCloseBtn.addEventListener('click', closeCart);
     
     function openCart() {
-        // --- CORRECTED: Use style.display to prevent bugs ---
         cartContentEl.style.display = 'block'; 
         orderConfirmationEl.style.display = 'none'; 
         cartOverlay.classList.remove('hidden');
@@ -193,7 +184,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     function closeCart() { 
         cartOverlay.classList.add('hidden'); 
-        // Reset view for next time
         setTimeout(() => {
             cartContentEl.style.display = 'block';
             orderConfirmationEl.style.display = 'none';
@@ -204,10 +194,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const isChecked = consentCheckbox.checked;
         emailSubmitBtn.disabled = !isChecked;
         whatsappBtn.disabled = !isChecked;
+        firebaseBtn.disabled = !isChecked; // <-- Control new button
     }
     consentCheckbox.addEventListener('change', toggleCheckoutButtons);
 
-    // Initialize ALL item controls
+    // (The cart functions: initItemControls, handleAddToCartClick, 
+    // handleRemoveFromCartClick, addToCart, updateCart, 
+    // addCartItemControls, adjustQuantity... are all unchanged)
+
     function initItemControls() {
         document.querySelectorAll('.add-btn').forEach(button => {
             button.removeEventListener('click', handleAddToCartClick);
@@ -393,6 +387,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateCart();
     }
 
+
     // --- 5. Coupon Logic ---
     applyCouponBtn.addEventListener('click', () => {
         const code = couponCodeInput.value.trim().toUpperCase();
@@ -436,7 +431,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateCart();
     });
 
-    // --- 6. Checkout Logic (AJAX submission) ---
+    // --- 6. Checkout Logic (Email) ---
     orderForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
@@ -450,15 +445,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const orderId = `pickup-${new Date().getTime()}`;
         const orderData = {
             id: orderId,
-            table: customerName, // Use customer name as the "table" identifier
-            customerName: customerName, // Also save it as a separate field
-            items: itemsOnly, // The array of items with prices
+            table: customerName, 
+            customerName: customerName, 
+            items: itemsOnly, 
             status: "new",
-            orderType: "pickup", // This is how the KDS will know
+            orderType: "pickup", 
             createdAt: new Date()
         };
         
-        // Save to Firebase first (this is fast)
         db.collection("orders").doc(orderId).set(orderData)
             .catch(e => console.error("Could not save order to Firebase KDS", e));
         // --- END OF NEW FIREBASE SAVE ---
@@ -482,7 +476,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 
                 confirmationSummaryEl.innerText = finalSummary;
-                // --- CORRECTED: Use style.display ---
                 cartContentEl.style.display = 'none'; 
                 orderConfirmationEl.style.display = 'block'; 
                 cart = [];
@@ -507,7 +500,56 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    // WhatsApp Submit
+    // --- 7. NEW: Kitchen Button (Firebase Only) ---
+    firebaseBtn.addEventListener('click', async () => {
+        const name = document.getElementById('customer-name').value;
+        const phone = document.getElementById('customer-phone').value;
+        
+        if (!name || !phone) {
+            alert("Please enter your name and phone number.");
+            return;
+        }
+
+        firebaseBtn.innerText = "Sending...";
+        firebaseBtn.disabled = true;
+
+        const { summaryText, total, itemsOnly } = generateOrderSummary();
+        const orderId = `pickup-${new Date().getTime()}`;
+        const orderData = {
+            id: orderId,
+            table: name,
+            customerName: name, 
+            items: itemsOnly, 
+            status: "new",
+            orderType: "pickup", 
+            createdAt: new Date()
+        };
+
+        try {
+            // Save to Firebase
+            await db.collection("orders").doc(orderId).set(orderData);
+            
+            // Show confirmation
+            let finalSummary = `Customer: ${name}\nPhone: ${phone}\n\n${summaryText}\nTotal: ${total.toFixed(2)} €`;
+            confirmationSummaryEl.innerText = finalSummary;
+            cartContentEl.style.display = 'none'; 
+            orderConfirmationEl.style.display = 'block'; 
+            cart = [];
+            appliedCoupon = null;
+            orderForm.reset();
+            consentCheckbox.checked = false;
+            updateCart();
+
+        } catch (error) {
+            console.error("Error sending order to Firebase: ", error);
+            alert("Error sending order. Please try again or call a waiter.");
+        } finally {
+            firebaseBtn.innerText = "Send to Kitchen (Live)";
+            toggleCheckoutButtons();
+        }
+    });
+
+    // --- 8. WhatsApp Submit ---
     whatsappBtn.addEventListener('click', () => {
         const name = document.getElementById('customer-name').value;
         const phone = document.getElementById('customer-phone').value;
@@ -518,14 +560,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
         
-        // --- MODIFIED: Get itemsOnly as well ---
         const { summaryText, total, discountText, itemsOnly } = generateOrderSummary();
         
         // --- NEW: SAVE TO FIREBASE (Also for WhatsApp button) ---
         const orderId = `pickup-${new Date().getTime()}`;
         const orderData = {
             id: orderId,
-            table: name, // Use customer name
+            table: name, 
             customerName: name, 
             items: itemsOnly, 
             status: "new",
@@ -554,12 +595,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.open(whatsappURL, '_blank');
     });
 
-    // --- 7. UPDATE THIS FUNCTION ---
+    // --- 9. UPDATE THIS FUNCTION ---
     function generateOrderSummary() {
         let summaryText = "";
         let subtotal = 0;
-        let itemsOnly = []; // <-- ADD THIS
-
+        let itemsOnly = []; // <-- FIX: Declare itemsOnly here
+        
         cart.forEach(item => {
             summaryText += `${item.quantity}x ${item.name} (${(item.price * item.quantity).toFixed(2)} €)\n`;
             subtotal += item.price * item.quantity;
