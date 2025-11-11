@@ -314,8 +314,10 @@ function renderTableList() {
         button.className = 'table-list-btn';
         
         // --- NEW: Add pickup icon to button text ---
+        // Find *any* order for this identifier to check its type
         const order = allCookedOrders.find(o => o.table === tableIdentifier);
-        if (order.orderType === 'pickup') {
+        
+        if (order && order.orderType === 'pickup') {
             button.innerHTML = `🛍️ ${tableIdentifier}`; // Show name with icon
         } else {
             button.innerHTML = `Table ${tableIdentifier}`; // Just show table number
@@ -375,19 +377,24 @@ function renderBillForTable(tableIdentifier) {
         // Handle both single-item "manual" orders and multi-item "dine-in" orders
         const items = order.items || [{ name: order.name, quantity: order.quantity, price: order.price }];
         
-        items.forEach(item => {
+        // --- THIS IS THE FIX ---
+        // We now add 'index' to the loop
+        items.forEach((item, index) => {
             const itemTotal = (item.price || 0) * (item.quantity || 1);
             total += itemTotal;
             
             const li = document.createElement('li');
             li.className = 'bill-item';
+            
+            // The button now gets a 'data-item-index'
             li.innerHTML = `
                 <span class="item-name">${item.quantity}x ${item.name}</span>
                 <span class="item-price">${itemTotal.toFixed(2)} €</span>
-                <button class="bill-delete-item" data-order-id="${order.id}">×</button>
+                <button class="bill-delete-item" data-order-id="${order.id}" data-item-index="${index}">×</button>
             `;
             billItemListEl.appendChild(li);
         });
+        // --- END OF FIX ---
     });
 
     billTotalAmountEl.textContent = `${total.toFixed(2)} €`;
@@ -408,13 +415,42 @@ function addDeleteButtonListeners() {
     document.querySelectorAll('.bill-delete-item').forEach(btn => {
         btn.addEventListener('click', async () => {
             const orderId = btn.dataset.orderId;
+            const itemIndex = parseInt(btn.dataset.itemIndex); // Get the item's index
             btn.disabled = true;
+
             try {
-                // Just delete this one document
-                await db.collection("orders").doc(orderId).delete();
-                // The onSnapshot listener will do the rest
+                // Get the order document from Firebase
+                const docRef = db.collection("orders").doc(orderId);
+                const doc = await docRef.get();
+
+                if (!doc.exists) {
+                    console.error("Document does not exist, cannot delete item.");
+                    return;
+                }
+
+                const orderData = doc.data();
+                
+                // Get the items array from the document
+                // This handles both 'dine-in' and 'manual' items
+                const items = orderData.items;
+
+                // Case 1: The order has only one item (or is a manual item).
+                // Delete the entire order document.
+                if (!items || items.length === 1) {
+                    await docRef.delete();
+                } else {
+                // Case 2: The order has multiple items.
+                    // Remove just the one item at that index
+                    items.splice(itemIndex, 1);
+                    // Update the document with the smaller items array
+                    await docRef.update({ items: items });
+                }
+                
+                // The onSnapshot listener will automatically handle the UI update
+
             } catch (err) {
                 console.error("Error deleting item:", err);
+                btn.disabled = false; // Re-enable on error
             }
         });
     });
