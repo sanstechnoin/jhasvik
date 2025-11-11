@@ -1663,4 +1663,111 @@ address {
     }
 }
 
+/* ===============================================
+   NEW SPLIT-SCREEN KDS STYLES
+=============================================== 
+*/
+
+.kds-section-header {
+    padding: 20px 10px 10px 10px;
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: 15px;
+    margin-top: 20px;
+}
+.kds-section-header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+    font-size: 1.8em;
+}
+
+/* --- Pickup Grid Layout --- */
+.pickup-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns on desktop */
+    gap: 15px;
+}
+
+.pickup-box {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.pickup-box .order-list {
+    list-style: none;
+    padding: 15px;
+    margin: 0;
+    flex-grow: 1; 
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.pickup-box .order-list li {
+    padding: 0 0 0 10px; /* Indent list items */
+    border-bottom: none;
+    font-size: 0.95em;
+    line-height: 1.6;
+    display: block; /* Was list-item */
+    list-style-type: none; /* Was disc */
+}
+
+/* Header for pickup box */
+.pickup-box .table-header h2 {
+    font-size: 1.1em; /* Make it a bit smaller to fit icon */
+}
+
+/* Empty placeholder */
+.pickup-box-empty {
+    grid-column: 1 / -1; /* Span all columns */
+    text-align: center;
+    color: var(--text-subtle);
+    font-style: italic;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    border: 1px dashed var(--border-color);
+}
+
+/* "Order Complete" Button */
+.clear-pickup-btn {
+    background-color: #006400; /* Dark Green */
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom-left-radius: 8px; /* Match box corner */
+    border-bottom-right-radius: 8px; /* Match box corner */
+    transition: background-color 0.2s;
+    margin-top: auto; /* Pushes button to the bottom */
+}
+.clear-pickup-btn:hover {
+    background-color: #008000; /* Brighter Green */
+}
+.clear-pickup-btn:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+/* Responsive Grid for Pickup */
+@media (max-width: 1200px) {
+    .pickup-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .pickup-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 500px) {
+    .pickup-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
