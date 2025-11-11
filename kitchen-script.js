@@ -26,161 +26,154 @@ const passwordInput = document.getElementById('kitchen-password');
 const loginError = document.getElementById('login-error');
 const kdsContentWrapper = document.getElementById('kds-content-wrapper');
 
+// NEW: KDS Grid Elements
+const dineInGrid = document.getElementById('dine-in-grid');
+const pickupGrid = document.getElementById('pickup-grid');
+
 let orderQueue = []; // For stacking popups
 let currentPopupOrder = null; // The order currently in the popup
-let tableOrders = {}; // Holds all active orders: { "1": [order1, order2], "5": [order3] }
-let notificationAudio = new Audio('notification.mp3'); // Cache the audio file
+let allOrders = {}; // Holds all active orders, keyed by order.id
+let notificationAudio = new Audio('notification.mp3'); 
+
+const KITCHEN_PASSWORD = "jhasvikkitchen"; 
+const TOTAL_DINE_IN_TABLES = 12;
 
 // --- 4. KDS Login Logic ---
-const KITCHEN_PASSWORD = "jhasvikkitchen"; 
-
 loginButton.addEventListener('click', () => {
     if (passwordInput.value === KITCHEN_PASSWORD) {
         loginOverlay.classList.add('hidden');
-        kdsContentWrapper.style.opacity = '1'; // Show content
-        initializeKDS(); // Start the listener *after* login
+        kdsContentWrapper.style.opacity = '1';
+        initializeKDS(); 
     } else {
         loginError.style.display = 'block';
     }
 });
-
-// Allow pressing Enter to log in
-passwordInput.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') {
-        loginButton.click();
-    }
-});
+passwordInput.addEventListener('keyup', (e) => e.key === 'Enter' && loginButton.click());
 
 
 // --- 5. Main KDS Functions ---
 
 /**
+ * Creates the 12 empty dine-in tables on page load.
+ */
+function createDineInTables() {
+    dineInGrid.innerHTML = ''; // Clear grid
+    for (let i = 1; i <= TOTAL_DINE_IN_TABLES; i++) {
+        const tableBox = document.createElement('div');
+        tableBox.className = 'table-box';
+        tableBox.id = `table-${i}`; // e.g., table-1
+        tableBox.innerHTML = `
+            <div class="table-header">
+                <h2>Table ${i}</h2>
+            </div>
+            <ul class="order-list" data-table-id="${i}">
+                <!-- Orders will be injected here -->
+            </ul>
+            <p class="order-list-empty" data-table-id="${i}">Waiting for order...</p>
+            <button class="clear-table-btn" data-table-id="${i}">Clear Table ${i}</button>
+        `;
+        dineInGrid.appendChild(tableBox);
+    }
+}
+
+/**
  * Initializes the main Firestore listener.
  */
 function initializeKDS() {
+    // 1. Create the empty tables first
+    createDineInTables();
+
+    // 2. Add listeners for all "Clear" buttons (Dine-In)
+    // We do this *after* creating them
+    dineInGrid.querySelectorAll('.clear-table-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleClearOrder(btn.dataset.tableId, 'dine-in'));
+    });
+
+    // 3. Start the main listener
     db.collection("orders")
-      .where("status", "in", ["new", "seen"]) // Only listen for active orders
+      .where("status", "in", ["new", "seen"]) 
       .onSnapshot(
         (snapshot) => {
-            // --- Connection Status ---
             connectionIconEl.textContent = '✅'; 
             
-            // --- Process Changes ---
+            let changedTables = new Set(); // Use a Set to avoid duplicates
+
             snapshot.docChanges().forEach((change) => {
                 const orderData = change.doc.data();
-                const tableId = orderData.table;
-
+                
+                // Add the table/customer to the set of things to update
+                changedTables.add(orderData.table); 
+                
                 if (change.type === "added") {
                     console.log("New order received:", orderData.id);
+                    allOrders[orderData.id] = orderData;
                     
                     orderQueue.push(orderData);
                     if (orderQueue.length === 1 && newOrderPopup.classList.contains('hidden')) {
                         showNextOrderInQueue();
                     }
-                    
-                    if (!tableOrders[tableId]) {
-                        tableOrders[tableId] = [];
-                    }
-                    tableOrders[tableId].push(orderData);
-                    
-                    updateTableBox(tableId);
                 }
                 
                 if (change.type === "removed") {
                     console.log("Order removed:", orderData.id);
-                    
-                    if (tableOrders[tableId]) {
-                        tableOrders[tableId] = tableOrders[tableId].filter(o => o.id !== orderData.id);
+                    if (allOrders[orderData.id]) {
+                        delete allOrders[orderData.id];
                     }
-                    
-                    updateTableBox(tableId);
                 }
                 
                 if (change.type === "modified") {
                     console.log("Order modified (seen):", orderData.id);
-                    if (tableOrders[tableId]) {
-                       const index = tableOrders[tableId].findIndex(o => o.id === orderData.id);
-                       if (index > -1) {
-                           tableOrders[tableId][index] = orderData;
-                       }
-                    }
+                    allOrders[orderData.id] = orderData;
+                    // No need to trigger a re-render for this
                 }
             });
+
+            // --- Re-render relevant parts ---
+            
+            // Re-render all pickup orders (it's simpler)
+            renderPickupGrid(); 
+
+            // Re-render only the dine-in tables that changed
+            changedTables.forEach(tableIdentifier => {
+                // Check if it's a number (e.g., "1", "5")
+                if (!isNaN(parseInt(tableIdentifier))) { 
+                    renderDineInTable(tableIdentifier);
+                }
+            });
+
         },
         (error) => {
-            // --- Error Handling ---
             console.error("Error connecting to Firestore: ", error);
             connectionIconEl.textContent = '❌'; 
         }
     );
-
-    // --- Add Listeners for ALL Clear Buttons ---
-    document.querySelectorAll('.clear-table-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const tableId = btn.dataset.tableId;
-            
-            // --- THIS IS THE NEW, SIMPLER LOGIC ---
-            // 1. Get all orders for this table from our local variable
-            const ordersToClear = tableOrders[tableId];
-            
-            if (!ordersToClear || ordersToClear.length === 0) {
-                console.log(`No orders to clear for table ${tableId}.`);
-                return; // Nothing to clear
-            }
-            
-            btn.disabled = true;
-            btn.textContent = "Clearing...";
-
-            // 2. Create a batch write to UPDATE them to 'cooked'
-            const batch = db.batch();
-            ordersToClear.forEach(order => {
-                const docRef = db.collection("orders").doc(order.id);
-                batch.update(docRef, { status: "cooked" });
-            });
-            
-            try {
-                // 3. Commit the batch
-                await batch.commit();
-                console.log(`Successfully 'cooked' all orders for table ${tableId}.`);
-                // The 'onSnapshot' listener will automatically handle the "removed"
-                // changes and update the UI.
-            } catch (e) {
-                console.error(`Error clearing table ${tableId}: `, e);
-                alert(`Could not clear table ${tableId}. Please try again.`);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = `Clear Table ${tableId}`;
-            }
-            // --- END OF NEW LOGIC ---
-        });
-    });
 } // End of initializeKDS()
 
 
 /**
- * Re-renders a specific table box based on the 'tableOrders' state.
+ * Re-renders a single Dine-In table box
  */
-function updateTableBox(tableId) {
+function renderDineInTable(tableId) {
     const tableBox = document.getElementById(`table-${tableId}`);
-    if (!tableBox) return;
+    if (!tableBox) return; // Not a dine-in table
     
     const orderList = tableBox.querySelector('.order-list');
     const emptyMsg = tableBox.querySelector('.order-list-empty');
     
-    const orders = tableOrders[tableId];
+    const ordersForThisTable = Object.values(allOrders).filter(o => o.table === tableId && o.orderType !== 'pickup');
     
     orderList.innerHTML = ""; 
     
-    if (!orders || orders.length === 0) {
+    if (ordersForThisTable.length === 0) {
         orderList.style.display = 'none';
         emptyMsg.style.display = 'block';
     } else {
         orderList.style.display = 'block';
         emptyMsg.style.display = 'none';
         
-        orders.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
+        ordersForThisTable.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
         
-        orders.forEach(order => {
+        ordersForThisTable.forEach(order => {
             const orderTimestamp = order.createdAt.toDate().toLocaleTimeString('de-DE', {
                 hour: '2-digit',
                 minute: '2-digit'
@@ -200,28 +193,119 @@ function updateTableBox(tableId) {
         });
 
         tableBox.classList.add('new-order-flash');
-        setTimeout(() => {
-            tableBox.classList.remove('new-order-flash');
-        }, 1500);
+        setTimeout(() => tableBox.classList.remove('new-order-flash'), 1500);
+    }
+}
+
+/**
+ * Re-renders the entire Pickup Order grid
+ */
+function renderPickupGrid() {
+    pickupGrid.innerHTML = ''; // Clear grid
+    
+    const pickupOrders = Object.values(allOrders).filter(o => o.orderType === 'pickup');
+    pickupOrders.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
+
+    if (pickupOrders.length === 0) {
+        pickupGrid.innerHTML = `
+            <div class="pickup-box-empty">
+                <p>Waiting for pickup orders...</p>
+            </div>`;
+        return;
+    }
+
+    pickupOrders.forEach(order => {
+        const orderTimestamp = order.createdAt.toDate().toLocaleTimeString('de-DE', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
+
+        const pickupBox = document.createElement('div');
+        pickupBox.className = 'pickup-box';
+        pickupBox.id = `pickup-${order.id}`;
+        pickupBox.innerHTML = `
+            <div class="table-header">
+                <h2>🛍️ ${order.customerName}</h2>
+                <span class="order-time">@ ${orderTimestamp}</span>
+            </div>
+            <ul class="order-list">
+                ${itemsHtml}
+            </ul>
+            <button class="clear-pickup-btn" data-customer-name="${order.customerName}">Order Complete</button>
+        `;
+        pickupGrid.appendChild(pickupBox);
+
+        // Add listener for this new button
+        pickupBox.querySelector('.clear-pickup-btn').addEventListener('click', () => {
+            handleClearOrder(order.customerName, 'pickup');
+        });
+    });
+}
+
+
+/**
+ * Handles "Clear Table" or "Order Complete" button clicks
+ */
+async function handleClearOrder(identifier, type) {
+    let ordersToClear = [];
+    if (type === 'dine-in') {
+        ordersToClear = Object.values(allOrders).filter(o => o.table === identifier && o.orderType !== 'pickup');
+    } else {
+        // For pickup, we clear all orders for that customer
+        ordersToClear = Object.values(allOrders).filter(o => o.customerName === identifier && o.orderType === 'pickup');
+    }
+
+    if (ordersToClear.length === 0) {
+        console.log(`No orders to clear for ${identifier}.`);
+        return;
+    }
+
+    // Disable button(s)
+    document.querySelectorAll(`[data-table-id="${identifier}"]`).forEach(btn => btn.disabled = true);
+    document.querySelectorAll(`[data-customer-name="${identifier}"]`).forEach(btn => btn.disabled = true);
+
+    const batch = db.batch();
+    ordersToClear.forEach(order => {
+        const docRef = db.collection("orders").doc(order.id);
+        batch.update(docRef, { status: "cooked" }); // Mark as 'cooked' for billing
+    });
+
+    try {
+        await batch.commit();
+        console.log(`Successfully 'cooked' all orders for ${identifier}.`);
+        // onSnapshot will handle the UI update
+    } catch (e) {
+        console.error(`Error clearing ${identifier}: `, e);
+        // Re-enable buttons on failure
+        document.querySelectorAll(`[data-table-id="${identifier}"]`).forEach(btn => btn.disabled = false);
+        document.querySelectorAll(`[data-customer-name="${identifier}"]`).forEach(btn => btn.disabled = false);
     }
 }
 
 // --- 6. Popup Queue Functions ---
 
-/**
- * Gets the next order from the queue and displays it in the popup.
- */
 function showNextOrderInQueue() {
     if (orderQueue.length === 0) {
         currentPopupOrder = null;
-        return; // No orders left in queue
+        return; 
     }
     
-    currentPopupOrder = orderQueue.shift(); // Get the first order
+    currentPopupOrder = orderQueue.shift(); 
     
     let itemsHtml = currentPopupOrder.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
+    
+    // Customize popup for pickup vs dine-in
+    let title = '';
+    if (currentPopupOrder.orderType === 'pickup') {
+        title = `🛍️ Pickup for ${currentPopupOrder.customerName}`;
+    } else {
+        title = `🔔 Table ${currentPopupOrder.table}`;
+    }
+
     popupOrderDetails.innerHTML = `
-        <h4>Table ${currentPopupOrder.table}</h4>
+        <h4>${title}</h4>
         <ul>${itemsHtml}</ul>
     `;
     
@@ -229,9 +313,6 @@ function showNextOrderInQueue() {
     notificationAudio.play().catch(e => console.warn("Could not play audio:", e));
 }
 
-/**
- * Hides the popup.
- */
 function hideNewOrderPopup() {
     newOrderPopup.classList.add('hidden');
     currentPopupOrder = null;
@@ -243,7 +324,6 @@ acceptOrderBtn.addEventListener('click', () => {
     const acceptedOrder = currentPopupOrder; 
     
     hideNewOrderPopup();
-    
     showNextOrderInQueue();
     
     if (acceptedOrder) {
