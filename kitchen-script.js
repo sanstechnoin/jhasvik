@@ -67,8 +67,7 @@ function createDineInTables() {
                 <h2>Table ${i}</h2>
             </div>
             <ul class="order-list" data-table-id="${i}">
-                <!-- Orders will be injected here -->
-            </ul>
+                </ul>
             <p class="order-list-empty" data-table-id="${i}">Waiting for order...</p>
             <button class="clear-table-btn" data-table-id="${i}">Clear Table ${i}</button>
         `;
@@ -101,7 +100,6 @@ function initializeKDS() {
             snapshot.docChanges().forEach((change) => {
                 const orderData = change.doc.data();
                 
-                // Add the table/customer to the set of things to update
                 changedTables.add(orderData.table); 
                 
                 if (change.type === "added") {
@@ -124,7 +122,6 @@ function initializeKDS() {
                 if (change.type === "modified") {
                     console.log("Order modified (seen):", orderData.id);
                     allOrders[orderData.id] = orderData;
-                    // No need to trigger a re-render for this
                 }
             });
 
@@ -135,7 +132,6 @@ function initializeKDS() {
 
             // Re-render only the dine-in tables that changed
             changedTables.forEach(tableIdentifier => {
-                // Check if it's a number (e.g., "1", "5")
                 if (!isNaN(parseInt(tableIdentifier))) { 
                     renderDineInTable(tableIdentifier);
                 }
@@ -159,7 +155,8 @@ function renderDineInTable(tableId) {
     
     const orderList = tableBox.querySelector('.order-list');
     const emptyMsg = tableBox.querySelector('.order-list-empty');
-    
+    const clearBtn = tableBox.querySelector('.clear-table-btn'); // <-- GET THE BUTTON
+
     const ordersForThisTable = Object.values(allOrders).filter(o => o.table === tableId && o.orderType !== 'pickup');
     
     orderList.innerHTML = ""; 
@@ -167,6 +164,13 @@ function renderDineInTable(tableId) {
     if (ordersForThisTable.length === 0) {
         orderList.style.display = 'none';
         emptyMsg.style.display = 'block';
+        
+        // --- THIS IS THE FIX ---
+        // If the table is empty, re-enable the button
+        clearBtn.disabled = false;
+        clearBtn.textContent = `Clear Table ${tableId}`;
+        // --- END OF FIX ---
+
     } else {
         orderList.style.display = 'block';
         emptyMsg.style.display = 'none';
@@ -238,8 +242,9 @@ function renderPickupGrid() {
         pickupGrid.appendChild(pickupBox);
 
         // Add listener for this new button
-        pickupBox.querySelector('.clear-pickup-btn').addEventListener('click', () => {
-            handleClearOrder(order.customerName, 'pickup');
+        const clearBtn = pickupBox.querySelector('.clear-pickup-btn');
+        clearBtn.addEventListener('click', () => {
+            handleClearOrder(order.customerName, 'pickup', clearBtn);
         });
     });
 }
@@ -248,13 +253,16 @@ function renderPickupGrid() {
 /**
  * Handles "Clear Table" or "Order Complete" button clicks
  */
-async function handleClearOrder(identifier, type) {
+async function handleClearOrder(identifier, type, buttonElement) {
     let ordersToClear = [];
+    let buttonsToDisable = [];
+
     if (type === 'dine-in') {
         ordersToClear = Object.values(allOrders).filter(o => o.table === identifier && o.orderType !== 'pickup');
+        buttonsToDisable = document.querySelectorAll(`[data-table-id="${identifier}"]`);
     } else {
-        // For pickup, we clear all orders for that customer
         ordersToClear = Object.values(allOrders).filter(o => o.customerName === identifier && o.orderType === 'pickup');
+        buttonsToDisable = document.querySelectorAll(`[data-customer-name="${identifier}"]`);
     }
 
     if (ordersToClear.length === 0) {
@@ -263,8 +271,10 @@ async function handleClearOrder(identifier, type) {
     }
 
     // Disable button(s)
-    document.querySelectorAll(`[data-table-id="${identifier}"]`).forEach(btn => btn.disabled = true);
-    document.querySelectorAll(`[data-customer-name="${identifier}"]`).forEach(btn => btn.disabled = true);
+    buttonsToDisable.forEach(btn => {
+        btn.disabled = true;
+        btn.textContent = "Clearing...";
+    });
 
     const batch = db.batch();
     ordersToClear.forEach(order => {
@@ -279,8 +289,11 @@ async function handleClearOrder(identifier, type) {
     } catch (e) {
         console.error(`Error clearing ${identifier}: `, e);
         // Re-enable buttons on failure
-        document.querySelectorAll(`[data-table-id="${identifier}"]`).forEach(btn => btn.disabled = false);
-        document.querySelectorAll(`[data-customer-name="${identifier}"]`).forEach(btn => btn.disabled = false);
+        buttonsToDisable.forEach(btn => {
+            btn.disabled = false;
+            if (type === 'dine-in') btn.textContent = `Clear Table ${identifier}`;
+            if (type === 'pickup') btn.textContent = `Order Complete`;
+        });
     }
 }
 
