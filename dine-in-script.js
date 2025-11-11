@@ -18,6 +18,7 @@ const db = firebase.firestore();
 // --- Global cart variable ---
 let cart = [];
 let tableNumber = 'Unknown'; 
+let lastOrderId = null; // Stores the ID of the most recent order
 
 
 // --- Main function to load config first ---
@@ -229,7 +230,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             itemsOnly.push({
                 quantity: item.quantity,
                 name: item.name,
-                price: item.price
+                price: item.price // Send price to Firebase
             });
         });
         return { summaryText, total, itemsOnly };
@@ -247,20 +248,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const { itemsOnly } = generateOrderSummary();
         const orderId = `${tableNumber}-${new Date().getTime()}`;
+        lastOrderId = orderId; // Save for cancellation
+        
+        // --- NEW: Get notes ---
+        const customerNotes = document.getElementById('dine-in-notes').value;
 
         const orderData = {
-            id: orderId, // Use the unique ID
+            id: orderId,
             table: tableNumber,
             items: itemsOnly,
             status: "new",
-            createdAt: new Date() // Use Firebase server timestamp
+            createdAt: new Date(),
+            orderType: "dine-in", // <-- Specify order type
+            notes: customerNotes || null // <-- Add notes
         };
 
         try {
-            // --- THIS IS THE CHANGE ---
-            // Send to Firebase using the unique orderId as the document ID
             await db.collection("orders").doc(orderId).set(orderData);
-            // --- END OF CHANGE ---
             
             showConfirmationScreen();
 
@@ -284,9 +288,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const { summaryText, total } = generateOrderSummary();
         
+        // --- NEW: Get notes ---
+        const customerNotes = document.getElementById('dine-in-notes').value;
+        
         // Populate hidden fields for Formbold
         document.getElementById('order-details-input').value = summaryText;
         document.getElementById('order-total-input').value = `${total.toFixed(2)} €`;
+        // --- NEW: Add notes to formbold ---
+        const notesInput = document.createElement('input');
+        notesInput.type = 'hidden';
+        notesInput.name = 'Allergies_or_Notes';
+        notesInput.value = customerNotes || 'None';
+        orderForm.appendChild(notesInput);
 
         const formData = new FormData(orderForm);
         
@@ -306,6 +319,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             formboldBtn.innerText = "Send via External App";
             formboldBtn.disabled = false;
             firebaseBtn.disabled = false;
+            if (notesInput) {
+                orderForm.removeChild(notesInput); // Clean up form
+            }
         });
     });
 
@@ -314,12 +330,62 @@ document.addEventListener("DOMContentLoaded", async () => {
         const { summaryText, total } = generateOrderSummary();
         let finalSummary = `Table: ${tableNumber}\n\n${summaryText}\nTotal: ${total.toFixed(2)} €`;
         
+        // --- NEW: Add notes to summary ---
+        const customerNotes = document.getElementById('dine-in-notes').value;
+        if (customerNotes) {
+            finalSummary += `\n\nNotes: ${customerNotes}`;
+        }
+        
         confirmationSummaryEl.innerText = finalSummary;
         cartContentEl.style.display = 'none';
         orderConfirmationEl.style.display = 'block';
 
+        // --- NEW CANCEL LOGIC ---
+        const cancelBtn = document.getElementById('cancel-order-btn');
+        const cancelText = document.getElementById('cancel-timer-text');
+        if (cancelBtn && cancelText) {
+            cancelBtn.style.display = 'block';
+            cancelText.style.display = 'block';
+            let secondsLeft = 30;
+            cancelText.innerText = `You can cancel this order within ${secondsLeft} seconds.`;
+
+            const timerInterval = setInterval(() => {
+                secondsLeft--;
+                cancelText.innerText = `You can cancel this order within ${secondsLeft} seconds.`;
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(timerInterval);
+                    cancelBtn.style.display = 'none';
+                    cancelText.style.display = 'none';
+                }
+            }, 1000);
+
+            cancelBtn.disabled = false;
+            cancelBtn.innerText = "Cancel Order"; // Reset button text
+            cancelBtn.onclick = async () => {
+                if (lastOrderId) {
+                    cancelBtn.disabled = true;
+                    cancelBtn.innerText = "Cancelling...";
+                    try {
+                        await db.collection("orders").doc(lastOrderId).delete();
+                        clearInterval(timerInterval); 
+                        
+                        confirmationSummaryEl.innerText = `Order ${lastOrderId} has been successfully cancelled.`;
+                        cancelBtn.style.display = 'none';
+                        cancelText.style.display = 'none';
+                        
+                    } catch (e) {
+                        console.error("Error cancelling order:", e);
+                        cancelBtn.innerText = "Error!";
+                    }
+                }
+            };
+        }
+        // --- END OF NEW LOGIC ---
+
         cart = [];
         orderForm.reset();
+        document.getElementById('dine-in-notes').value = ''; // Clear notes
         updateCart();
     }
 });
