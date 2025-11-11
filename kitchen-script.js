@@ -67,8 +67,7 @@ function createDineInTables() {
                 <h2>Table ${i}</h2>
             </div>
             <ul class="order-list" data-table-id="${i}">
-                <!-- Orders will be injected here -->
-            </ul>
+                </ul>
             <p class="order-list-empty" data-table-id="${i}">Waiting for order...</p>
             <button class="clear-table-btn" data-table-id="${i}">Clear Table ${i}</button>
         `;
@@ -86,7 +85,7 @@ function initializeKDS() {
     // 2. Add listeners for all "Clear" buttons (Dine-In)
     // We do this *after* creating them
     dineInGrid.querySelectorAll('.clear-table-btn').forEach(btn => {
-        btn.addEventListener('click', () => handleClearOrder(btn.dataset.tableId, 'dine-in'));
+        btn.addEventListener('click', () => handleClearOrder(btn.dataset.tableId, 'dine-in', btn));
     });
 
     // 3. Start the main listener
@@ -96,12 +95,18 @@ function initializeKDS() {
         (snapshot) => {
             connectionIconEl.textContent = '✅'; 
             
-            let changedTables = new Set(); // Use a Set to avoid duplicates
+            let changedTables = new Set(); 
+            let changedPickupCustomers = new Set(); // Keep track of pickup customers too
 
             snapshot.docChanges().forEach((change) => {
                 const orderData = change.doc.data();
                 
-                changedTables.add(orderData.table); 
+                // Track all unique identifiers that changed
+                if(orderData.orderType === 'pickup') {
+                    changedPickupCustomers.add(orderData.customerName);
+                } else {
+                    changedTables.add(orderData.table); 
+                }
                 
                 if (change.type === "added") {
                     console.log("New order received:", orderData.id);
@@ -128,7 +133,7 @@ function initializeKDS() {
 
             // --- Re-render relevant parts ---
             
-            // Re-render all pickup orders (it's simpler)
+            // Re-render all pickup orders (simpler to re-render all)
             renderPickupGrid(); 
 
             // Re-render only the dine-in tables that changed
@@ -152,7 +157,7 @@ function initializeKDS() {
  */
 function renderDineInTable(tableId) {
     const tableBox = document.getElementById(`table-${tableId}`);
-    if (!tableBox) return; // Not a dine-in table
+    if (!tableBox) return; 
     
     const orderList = tableBox.querySelector('.order-list');
     const emptyMsg = tableBox.querySelector('.order-list-empty');
@@ -165,13 +170,11 @@ function renderDineInTable(tableId) {
     if (ordersForThisTable.length === 0) {
         orderList.style.display = 'none';
         
-        // --- THIS IS THE FIX ---
-        emptyMsg.textContent = "Waiting for order..."; // Force reset text
+        emptyMsg.textContent = "Waiting for order..."; 
         emptyMsg.style.display = 'block';
         
         clearBtn.disabled = false;
         clearBtn.textContent = `Clear Table ${tableId}`;
-        // --- END OF FIX ---
 
     } else {
         orderList.style.display = 'block';
@@ -187,12 +190,10 @@ function renderDineInTable(tableId) {
             
             let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
             
-            // --- NEW: Check for notes ---
             let notesHtml = '';
             if (order.notes && order.notes.trim() !== '') {
                 notesHtml = `<p class="order-notes">⚠️ Notes: ${order.notes}</p>`;
             }
-            // --- END NEW ---
 
             const orderGroupHtml = `
                 <div class="order-group" id="${order.id}">
@@ -200,7 +201,7 @@ function renderDineInTable(tableId) {
                     <ul>
                         ${itemsHtml}
                     </ul>
-                    ${notesHtml} <!-- ADDED NOTES HERE -->
+                    ${notesHtml} 
                 </div>
             `;
             orderList.innerHTML += orderGroupHtml;
@@ -236,12 +237,10 @@ function renderPickupGrid() {
         
         let itemsHtml = order.items.map(item => `<li>${item.quantity}x ${item.name}</li>`).join('');
 
-        // --- NEW: Check for notes ---
         let notesHtml = '';
         if (order.notes && order.notes.trim() !== '') {
             notesHtml = `<p class="order-notes">⚠️ Notes: ${order.notes}</p>`;
         }
-        // --- END NEW ---
 
         const pickupBox = document.createElement('div');
         pickupBox.className = 'pickup-box';
@@ -254,15 +253,16 @@ function renderPickupGrid() {
             <ul class="order-list">
                 ${itemsHtml}
             </ul>
-            ${notesHtml} <!-- ADDED NOTES HERE -->
-            <button class="clear-pickup-btn" data-customer-name="${order.customerName}">Order Complete</button>
+            ${notesHtml} 
+            <button class="clear-pickup-btn" data-order-id="${order.id}">Order Complete</button>
         `;
         pickupGrid.appendChild(pickupBox);
 
         // Add listener for this new button
         const clearBtn = pickupBox.querySelector('.clear-pickup-btn');
         clearBtn.addEventListener('click', () => {
-            handleClearOrder(order.customerName, 'pickup', clearBtn);
+            // --- THIS IS THE FIX (Part 2): Pass the unique order.id ---
+            handleClearOrder(order.id, 'pickup', clearBtn);
         });
     });
 }
@@ -273,14 +273,22 @@ function renderPickupGrid() {
  */
 async function handleClearOrder(identifier, type, buttonElement) {
     let ordersToClear = [];
-    let buttonsToDisable = [];
+    let buttonsToDisable = [buttonElement]; // We will always disable the button that was clicked.
 
     if (type === 'dine-in') {
+        // This is correct: 'identifier' is the tableId.
         ordersToClear = Object.values(allOrders).filter(o => o.table === identifier && o.orderType !== 'pickup');
+        // Get *all* buttons for this table (in case there's one in the HTML and one in the list)
         buttonsToDisable = document.querySelectorAll(`button[data-table-id="${identifier}"]`);
     } else {
-        ordersToClear = Object.values(allOrders).filter(o => o.customerName === identifier && o.orderType === 'pickup');
-        buttonsToDisable = document.querySelectorAll(`button[data-customer-name="${identifier}"]`);
+        // --- THIS IS THE FIX (Part 3) ---
+        // 'identifier' is now the unique order.id
+        const orderToClear = allOrders[identifier];
+        if (orderToClear) {
+            ordersToClear = [orderToClear]; // An array with just the one order
+        }
+        // buttonsToDisable is already set to [buttonElement]
+        // --- END OF FIX ---
     }
 
     if (ordersToClear.length === 0) {
@@ -335,17 +343,15 @@ function showNextOrderInQueue() {
         title = `🔔 Table ${currentPopupOrder.table}`;
     }
 
-    // --- NEW: Add notes to popup ---
     let notesHtml = '';
     if (currentPopupOrder.notes && currentPopupOrder.notes.trim() !== '') {
         notesHtml = `<p class="popup-notes">⚠️ Notes: ${currentPopupOrder.notes}</p>`;
     }
-    // --- END NEW ---
 
     popupOrderDetails.innerHTML = `
         <h4>${title}</h4>
         <ul>${itemsHtml}</ul>
-        ${notesHtml} <!-- ADDED NOTES HERE -->
+        ${notesHtml} 
     `;
     
     newOrderPopup.classList.remove('hidden');
