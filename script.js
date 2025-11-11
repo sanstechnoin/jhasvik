@@ -21,16 +21,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     let config;
     try {
-        // Fetch the config file
         const response = await fetch('config.json?v=23'); 
         config = await response.json();
     } catch (error) {
         console.error("Failed to load config.json", error);
-        // If config fails, use empty defaults
         config = { promoPopup: {}, coupons: [], whatsappNumber: "", featuredCouponCode: "" };
     }
 
-    // --- 1. Sticky Header Scroll Padding (Corrected Version) ---
+    // --- 1. Sticky Header Scroll Padding ---
     const header = document.querySelector('header');
     const headerNav = document.querySelector('header nav');
     function updateScrollPadding() {
@@ -39,7 +37,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.documentElement.style.setProperty('scroll-padding-top', `${headerHeight}px`);
 
             if (headerNav) {
-                // This tells the nav bar where to stick
                 const navHeight = headerNav.offsetHeight;
                 const topPartHeight = headerHeight - navHeight;
                 headerNav.style.top = `${topPartHeight}px`;
@@ -50,16 +47,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener('resize', updateScrollPadding);
 
     // --- 2. Nav Scroller (Fade Effect Logic) ---
-    // This adds/removes the fade classes based on scroll position
     const navLinksContainer = document.getElementById('nav-links-container');
     if (navLinksContainer) {
         const navWrapper = navLinksContainer.closest('.nav-wrapper');
         const updateFadeVisibility = () => {
             if (!navWrapper) return;
             const maxScroll = navLinksContainer.scrollWidth - navLinksContainer.clientWidth;
-            // Add 'fade-left' if scrolled more than 1px
             navWrapper.classList.toggle('fade-left', navLinksContainer.scrollLeft > 1);
-            // Add 'fade-right' if not scrolled all the way to the end
             navWrapper.classList.toggle('fade-right', navLinksContainer.scrollLeft < maxScroll - 1);
         };
 
@@ -75,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- 3. DYNAMIC Promotional Popup & Marquee ---
     const promo = config.promoPopup;
     const promoPopup = document.getElementById('popup-overlay');
-    const closePromoBtn = document.getElementById('close-popup'); // <--- THIS IS THE BUTTON
+    const closePromoBtn = document.getElementById('close-popup');
     const marqueeContainer = document.getElementById('marquee-container');
     const marqueeText = document.getElementById('marquee-text');
 
@@ -110,14 +104,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         marqueeContainer.addEventListener('mouseout', () => marqueeText.classList.remove('paused'));
     }
 
-    // --- THIS IS THE FIX ---
     if (promoPopup && closePromoBtn) {
         const lastShown = localStorage.getItem('promoLastShown');
         const twentyFourHours = 24 * 60 * 60 * 1000;
         const now = new Date().getTime();
 
-        // Use style.display = 'flex' to show it, because the CSS uses display: flex
-        promoPopup.style.display = 'none'; // Start as hidden
+        promoPopup.style.display = 'none'; 
 
         if (isPromoActive() && (!lastShown || (now - lastShown > twentyFourHours))) {
             const line1El = document.getElementById('promo-line-1');
@@ -126,17 +118,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (line2El) line2El.innerText = promo.line2;
             
             setTimeout(() => {
-                promoPopup.style.display = 'flex'; // <-- CORRECTED
+                promoPopup.style.display = 'flex'; 
                 localStorage.setItem('promoLastShown', now.toString());
-            }, 5000); // 5 second delay
+            }, 5000); 
         }
 
-        // This is the corrected event listener
         closePromoBtn.addEventListener('click', () => {
-            promoPopup.style.display = 'none'; // <-- CORRECTED
+            promoPopup.style.display = 'none'; 
         });
     }
-    // --- END OF FIX ---
 
     // --- 4. Shopping Cart Logic (Full Pickup Version) ---
     const cartToggleBtn = document.getElementById('cart-toggle-btn');
@@ -158,7 +148,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const confirmationCloseBtn = document.getElementById('confirmation-close-btn');
     const couponHintEl = document.getElementById('coupon-hint');
 
-    // Show Featured Coupon Hint
     if (config.featuredCouponCode && couponHintEl) {
         const featuredCoupon = config.coupons.find(c => c.code === config.featuredCouponCode);
         if (featuredCoupon) {
@@ -178,8 +167,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const orderForm = document.getElementById('order-form');
     const emailSubmitBtn = orderForm.querySelector('.checkout-email');
     const whatsappBtn = document.getElementById('whatsapp-btn');
-    
-    // --- NEW: Get the kitchen button ---
     const firebaseBtn = document.getElementById('firebase-btn'); 
     
     if (cartToggleBtn) cartToggleBtn.addEventListener('click', openCart);
@@ -187,7 +174,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (confirmationCloseBtn) confirmationCloseBtn.addEventListener('click', closeCart);
     
     function openCart() {
-        // --- CORRECTED: Use style.display to prevent bugs ---
         cartContentEl.style.display = 'block'; 
         orderConfirmationEl.style.display = 'none'; 
         cartOverlay.classList.remove('hidden');
@@ -196,7 +182,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     function closeCart() { 
         cartOverlay.classList.add('hidden'); 
-        // Reset view for next time
         setTimeout(() => {
             cartContentEl.style.display = 'block';
             orderConfirmationEl.style.display = 'none';
@@ -207,11 +192,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const isChecked = consentCheckbox.checked;
         emailSubmitBtn.disabled = !isChecked;
         whatsappBtn.disabled = !isChecked;
-        firebaseBtn.disabled = !isChecked; // <-- Control new button
+        firebaseBtn.disabled = !isChecked;
     }
     consentCheckbox.addEventListener('change', toggleCheckoutButtons);
 
-    // Initialize ALL item controls
     function initItemControls() {
         document.querySelectorAll('.add-btn').forEach(button => {
             button.removeEventListener('click', handleAddToCartClick);
@@ -397,7 +381,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateCart();
     }
 
-
     // --- 5. Coupon Logic ---
     applyCouponBtn.addEventListener('click', () => {
         const code = couponCodeInput.value.trim().toUpperCase();
@@ -440,35 +423,78 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         updateCart();
     });
-
-    // --- 6. Checkout Logic (Email) ---
-    orderForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // --- MODIFIED: Get itemsOnly as well ---
+    
+    // --- 6. Helper function to build the order data ---
+    function getOrderData() {
         const { summaryText, total, discountText, itemsOnly } = generateOrderSummary();
         const customerName = document.getElementById('customer-name').value;
         const customerPhone = document.getElementById('customer-phone').value;
         const customerNotes = document.getElementById('customer-notes').value;
+        
+        if (!customerName || !customerPhone) {
+            alert("Please enter your name and phone number.");
+            return null; // Return null if validation fails
+        }
 
-        // --- NEW: SAVE TO FIREBASE ---
         const orderId = `pickup-${new Date().getTime()}`;
         const orderData = {
             id: orderId,
-            table: customerName, 
-            customerName: customerName, 
-            items: itemsOnly, 
+            table: customerName, // Use customer name as the "table" identifier
+            customerName: customerName,
+            customerPhone: customerPhone, // <-- ADDED PHONE
+            notes: customerNotes || null, // <-- ADDED NOTES
+            items: itemsOnly,
             status: "new",
             orderType: "pickup", 
             createdAt: new Date()
         };
         
-        db.collection("orders").doc(orderId).set(orderData)
-            .catch(e => console.error("Could not save order to Firebase KDS", e));
-        // --- END OF NEW FIREBASE SAVE ---
+        const summary = {
+            summaryText,
+            total,
+            discountText,
+            customerName,
+            customerPhone,
+            customerNotes
+        };
+        
+        return { orderData, summary };
+    }
+    
+    // --- 7. Helper function to show confirmation ---
+    function showConfirmationScreen(summary) {
+        let finalSummary = `Customer: ${summary.customerName}\nPhone: ${summary.customerPhone}\n\n${summary.summaryText}\n${summary.discountText}Total: ${summary.total.toFixed(2)} €`;
+        if (summary.customerNotes) {
+            finalSummary += `\n\nNotes:\n${summary.customerNotes}`;
+        }
+        
+        confirmationSummaryEl.innerText = finalSummary;
+        cartContentEl.style.display = 'none'; 
+        orderConfirmationEl.style.display = 'block'; 
+        cart = [];
+        appliedCoupon = null;
+        orderForm.reset();
+        consentCheckbox.checked = false;
+        updateCart();
+    }
 
-        document.getElementById('order-details-input').value = `${summaryText}\n${discountText}`;
-        document.getElementById('order-total-input').value = `${total.toFixed(2)} €`;
+
+    // --- 8. Checkout Logic (Email) ---
+    orderForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const orderPayload = getOrderData();
+        if (!orderPayload) return; // Validation failed
+        
+        const { orderData, summary } = orderPayload;
+
+        // Save to Firebase
+        db.collection("orders").doc(orderData.id).set(orderData)
+            .catch(e => console.error("Could not save order to Firebase KDS", e));
+
+        // Fill Formbold hidden fields
+        document.getElementById('order-details-input').value = `${summary.summaryText}\n${summary.discountText}`;
+        document.getElementById('order-total-input').value = `${summary.total.toFixed(2)} €`;
 
         const formData = new FormData(orderForm);
         emailSubmitBtn.innerText = "Sending...";
@@ -480,19 +506,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             headers: { 'Accept': 'application/json' }
         }).then(response => {
             if (response.ok) {
-                let finalSummary = `Customer: ${customerName}\nPhone: ${customerPhone}\n\n${summaryText}\n${discountText}Total: ${total.toFixed(2)} €`;
-                if (customerNotes) {
-                    finalSummary += `\n\nNotes:\n${customerNotes}`;
-                }
-                
-                confirmationSummaryEl.innerText = finalSummary;
-                cartContentEl.style.display = 'none'; 
-                orderConfirmationEl.style.display = 'block'; 
-                cart = [];
-                appliedCoupon = null;
-                orderForm.reset();
-                consentCheckbox.checked = false;
-                updateCart();
+                showConfirmationScreen(summary);
             } else {
                 response.json().then(data => {
                     if (Object.hasOwn(data, 'errors')) {
@@ -510,50 +524,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    // --- 7. NEW: Kitchen Button (Firebase Only) ---
+    // --- 9. Kitchen Button (Firebase Only) ---
     firebaseBtn.addEventListener('click', async () => {
-        const name = document.getElementById('customer-name').value;
-        const phone = document.getElementById('customer-phone').value;
-        const notes = document.getElementById('customer-notes').value; // <-- Get notes
+        const orderPayload = getOrderData();
+        if (!orderPayload) return; // Validation failed
         
-        if (!name || !phone) {
-            alert("Please enter your name and phone number.");
-            return;
-        }
+        const { orderData, summary } = orderPayload;
 
         firebaseBtn.innerText = "Sending...";
         firebaseBtn.disabled = true;
 
-        const { summaryText, total, discountText, itemsOnly } = generateOrderSummary(); // <-- Make sure to get itemsOnly
-        const orderId = `pickup-${new Date().getTime()}`;
-        const orderData = {
-            id: orderId,
-            table: name,
-            customerName: name, 
-            items: itemsOnly, 
-            status: "new",
-            orderType: "pickup", 
-            createdAt: new Date()
-        };
-
         try {
-            // Save to Firebase
-            await db.collection("orders").doc(orderId).set(orderData);
-            
-            // Show confirmation
-            let finalSummary = `Customer: ${name}\nPhone: ${phone}\n\n${summaryText}\n${discountText}Total: ${total.toFixed(2)} €`;
-            if (notes) { // Also include notes here
-                finalSummary += `\n\nNotes:\n${notes}`;
-            }
-            confirmationSummaryEl.innerText = finalSummary;
-            cartContentEl.style.display = 'none'; 
-            orderConfirmationEl.style.display = 'block'; 
-            cart = [];
-            appliedCoupon = null;
-            orderForm.reset();
-            consentCheckbox.checked = false;
-            updateCart();
-
+            await db.collection("orders").doc(orderData.id).set(orderData);
+            showConfirmationScreen(summary);
         } catch (error) {
             console.error("Error sending order to Firebase: ", error);
             alert("Error sending order. Please try again or call a waiter.");
@@ -563,34 +546,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    // --- 8. WhatsApp Submit ---
+    // --- 10. WhatsApp Submit ---
     whatsappBtn.addEventListener('click', () => {
-        const name = document.getElementById('customer-name').value;
-        const phone = document.getElementById('customer-phone').value;
-        const notes = document.getElementById('customer-notes').value;
+        const orderPayload = getOrderData();
+        if (!orderPayload) return; // Validation failed
         
-        if (!name || !phone) {
-            alert("Please enter your name and phone number.");
-            return;
-        }
+        const { orderData, summary } = orderPayload;
         
-        const { summaryText, total, discountText, itemsOnly } = generateOrderSummary();
-        
-        // --- NEW: SAVE TO FIREBASE (Also for WhatsApp button) ---
-        const orderId = `pickup-${new Date().getTime()}`;
-        const orderData = {
-            id: orderId,
-            table: name, 
-            customerName: name, 
-            items: itemsOnly, 
-            status: "new",
-            orderType: "pickup", 
-            createdAt: new Date()
-        };
-        
-        db.collection("orders").doc(orderId).set(orderData)
+        // Save to Firebase
+        db.collection("orders").doc(orderData.id).set(orderData)
             .catch(e => console.error("Could not save order to Firebase KDS", e));
-        // --- END OF NEW FIREBASE SAVE ---
         
         const WHATSAPP_NUMBER = config.whatsappNumber;
         if (!WHATSAPP_NUMBER) {
@@ -598,10 +563,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        let whatsappMessage = `*New Pickup Order*\n\n*Customer:* ${name}\n*Phone:* ${phone}\n\n*Order:*\n${summaryText}\n${discountText}*Total: ${total.toFixed(2)} €*`;
+        let whatsappMessage = `*New Pickup Order*\n\n*Customer:* ${summary.customerName}\n*Phone:* ${summary.customerPhone}\n\n*Order:*\n${summary.summaryText}\n${summary.discountText}*Total: ${summary.total.toFixed(2)} €*`;
         
-        if (notes) {
-            whatsappMessage += `\n\n*Notes:*\n${notes}`;
+        if (summary.customerNotes) {
+            whatsappMessage += `\n\n*Notes:*\n${summary.customerNotes}`;
         }
 
         let encodedMessage = encodeURIComponent(whatsappMessage);
@@ -609,17 +574,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.open(whatsappURL, '_blank');
     });
 
-    // --- 9. UPDATE THIS FUNCTION ---
+    // --- 11. GenerateOrderSummary (Your existing function, unchanged) ---
     function generateOrderSummary() {
         let summaryText = "";
         let subtotal = 0;
-        let itemsOnly = []; // <-- FIX: Declare itemsOnly here
+        let itemsOnly = [];
         
         cart.forEach(item => {
             summaryText += `${item.quantity}x ${item.name} (${(item.price * item.quantity).toFixed(2)} €)\n`;
             subtotal += item.price * item.quantity;
             
-            // <-- ADD THIS to include price
             itemsOnly.push({
                 quantity: item.quantity,
                 name: item.name,
@@ -651,11 +615,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 });
                 discountAmount = appliedCoupon.value * applicableItems;
-                discountText = `Discount (${appliedCoupon.code})`; // <-- FIX: Was missing
+                discountText = `Discount (${appliedCoupon.code})`;
             } 
             else if (appliedCoupon.discountType === 'percent') {
                 discountAmount = discountableSubtotal * appliedCoupon.value;
-                discountText = `Discount (${(appliedCoupon.value * 100).toFixed(0)}%)`; // <-- FIX: Was missing
+                discountText = `Discount (${(appliedCoupon.value * 100).toFixed(0)}%)`;
             }
             discountAmount = Math.min(subtotal, discountAmount);
             
@@ -666,7 +630,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         let total = subtotal - discountAmount;
         
-        // --- UPDATE THE RETURN VALUE ---
         return { summaryText, subtotal, discountText, total, itemsOnly };
     }
     
