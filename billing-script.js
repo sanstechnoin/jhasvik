@@ -189,12 +189,19 @@ function initializeBilling() {
 
         const newOrderId = `${currentSelectedTable}-manual-${new Date().getTime()}`;
         
+        // --- NEW: Check if this is a pickup order ---
+        const isPickup = allCookedOrders.some(order => order.table === currentSelectedTable && order.orderType === 'pickup');
+
         const newItem = {
             id: newOrderId,
-            table: currentSelectedTable,
+            table: currentSelectedTable, // This is the Table # or Customer Name
             items: [{ name: name, quantity: qty, price: price }], // Stored as an array to match
             status: "cooked", // Add directly to the bill
             createdAt: new Date(),
+            
+            // Add pickup/customer info if it exists
+            orderType: isPickup ? "pickup" : "dine-in",
+            customerName: isPickup ? currentSelectedTable : null,
             
             // To make it compatible with our 'render' function
             name: name,
@@ -216,7 +223,8 @@ function initializeBilling() {
         if (!currentSelectedTable) return;
 
         // Simple confirmation
-        if (!confirm(`Are you sure you want to CLOSE and CLEAR the bill for Table ${currentSelectedTable}? This cannot be undone.`)) {
+        const confirmMessage = `Are you sure you want to CLOSE and ARCHIVE the bill for ${currentSelectedTable}? This cannot be undone.`;
+        if (!confirm(confirmMessage)) {
             return;
         }
         
@@ -245,7 +253,7 @@ function initializeBilling() {
 
         // 2. Create the new archive document
         const archiveDoc = {
-            table: currentSelectedTable,
+            table: currentSelectedTable, // This is the Table # or Customer Name
             items: finalBillItems,
             total: finalBillTotal,
             closedAt: new Date() // The time the bill was closed
@@ -253,7 +261,6 @@ function initializeBilling() {
 
         try {
             // 3. Save the new archive document
-            // We give it a unique ID based on the timestamp
             const archiveId = `archive-${new Date().getTime()}`;
             await db.collection("archived_orders").doc(archiveId).set(archiveDoc);
 
@@ -264,7 +271,7 @@ function initializeBilling() {
             });
             await batch.commit();
 
-            console.log(`Bill for Table ${currentSelectedTable} has been archived and closed.`);
+            console.log(`Bill for ${currentSelectedTable} has been archived and closed.`);
             billViewEl.classList.add('hidden'); // Hide the bill view
             currentSelectedTable = null;
             // The onSnapshot listener will automatically update the table list
@@ -281,9 +288,19 @@ function initializeBilling() {
  * Populates the left column with buttons for each table that has a bill.
  */
 function renderTableList() {
-    // Get a unique list of table numbers from all 'cooked' orders
+    // Get a unique list of table numbers / customer names
     const tablesWithBills = [...new Set(allCookedOrders.map(order => order.table))];
-    tablesWithBills.sort((a, b) => a - b); // Sort tables numerically
+    
+    // Sort tables: Numbers first, then names
+    tablesWithBills.sort((a, b) => {
+        const aIsNum = !isNaN(parseInt(a));
+        const bIsNum = !isNaN(parseInt(b));
+
+        if (aIsNum && !bIsNum) return -1; // Numbers come before strings
+        if (!aIsNum && bIsNum) return 1;  // Strings come after numbers
+        if (aIsNum && bIsNum) return parseInt(a) - parseInt(b); // Sort numbers numerically
+        return a.localeCompare(b); // Sort strings alphabetically
+    });
     
     tableListEl.innerHTML = ""; // Clear the list
     
@@ -292,19 +309,27 @@ function renderTableList() {
         return;
     }
 
-    tablesWithBills.forEach(tableNumber => {
+    tablesWithBills.forEach(tableIdentifier => {
         const button = document.createElement('button');
         button.className = 'table-list-btn';
-        button.textContent = `Table ${tableNumber}`;
-        button.dataset.tableId = tableNumber;
         
-        // Highlight the currently selected table
-        if (tableNumber === currentSelectedTable) {
+        // --- NEW: Add pickup icon to button text ---
+        const order = allCookedOrders.find(o => o.table === tableIdentifier);
+        if (order.orderType === 'pickup') {
+            button.innerHTML = `🛍️ ${tableIdentifier}`; // Show name with icon
+        } else {
+            button.innerHTML = `Table ${tableIdentifier}`; // Just show table number
+        }
+        // --- END NEW ---
+        
+        button.dataset.tableId = tableIdentifier;
+        
+        if (tableIdentifier === currentSelectedTable) {
             button.classList.add('selected');
         }
         
         button.addEventListener('click', () => {
-            renderBillForTable(tableNumber);
+            renderBillForTable(tableIdentifier);
         });
         tableListEl.appendChild(button);
     });
@@ -313,27 +338,36 @@ function renderTableList() {
 /**
  * Renders the full bill details for the selected table in the right column.
  */
-function renderBillForTable(tableNumber) {
-    currentSelectedTable = tableNumber;
+function renderBillForTable(tableIdentifier) {
+    currentSelectedTable = tableIdentifier;
     
     // Highlight the selected button in the left list
     document.querySelectorAll('.table-list-btn').forEach(btn => {
-        btn.classList.toggle('selected', btn.dataset.tableId === tableNumber);
+        btn.classList.toggle('selected', btn.dataset.tableId === tableIdentifier);
     });
 
-    // Get all orders for just this table
-    const tableOrders = allCookedOrders.filter(order => order.table === tableNumber);
+    // Get all orders for just this table (dine-in) or customer (pickup)
+    const tableOrders = allCookedOrders.filter(order => order.table === tableIdentifier);
     
     if (tableOrders.length === 0) {
-        // This can happen if the bill was just closed
         billViewEl.classList.add('hidden');
         currentSelectedTable = null;
         renderTableList(); // Refresh the list
         return;
     }
     
+    // --- NEW: Check if this is a pickup order ---
+    const isPickup = tableOrders.some(order => order.orderType === 'pickup');
+
     billViewEl.classList.remove('hidden');
-    billTableNumberEl.textContent = tableNumber;
+    
+    // --- NEW: Add pickup icon to title ---
+    if (isPickup) {
+        billTableNumberEl.innerHTML = `🛍️ ${tableIdentifier}`; // Show name with icon
+    } else {
+        billTableNumberEl.innerHTML = `Table ${tableIdentifier}`; // Just show table number
+    }
+    
     billItemListEl.innerHTML = "";
     let total = 0;
 
